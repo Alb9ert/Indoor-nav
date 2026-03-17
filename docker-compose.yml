@@ -27,6 +27,7 @@ services:
       - navNet
   postgres:
     image: postgis/postgis:18-3.6
+    platform: linux/amd64
     container_name: postgres
     restart: unless-stopped
     env_file:
