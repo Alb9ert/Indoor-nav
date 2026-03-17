@@ -1,3 +1,4 @@
+import { Input } from '#/components/ui/input'
 import { getTodos } from '#/server/todo.functions'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
@@ -13,6 +14,7 @@ function App() {
           <h1>{todo.title}</h1>
         </div>
       ))}
+      <Input type="text" placeholder="Add a todo" />
     </main>
   )
 }
