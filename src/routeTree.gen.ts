@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+<<<<<<< HEAD
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -16,6 +17,15 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+=======
+import { Route as TestImportRouteImport } from './routes/testImport'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+
+const TestImportRoute = TestImportRouteImport.update({
+  id: '/testImport',
+  path: '/testImport',
+>>>>>>> 4a81322 (made uploade image form)
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -31,41 +41,72 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+<<<<<<< HEAD
   '/login': typeof LoginRoute
+=======
+  '/testImport': typeof TestImportRoute
+>>>>>>> 4a81322 (made uploade image form)
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+<<<<<<< HEAD
   '/login': typeof LoginRoute
+=======
+  '/testImport': typeof TestImportRoute
+>>>>>>> 4a81322 (made uploade image form)
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+<<<<<<< HEAD
   '/login': typeof LoginRoute
+=======
+  '/testImport': typeof TestImportRoute
+>>>>>>> 4a81322 (made uploade image form)
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
+<<<<<<< HEAD
   fullPaths: '/' | '/login' | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/login' | '/api/auth/$'
   id: '__root__' | '/' | '/login' | '/api/auth/$'
+=======
+  fullPaths: '/' | '/testImport' | '/api/auth/$'
+  fileRoutesByTo: FileRoutesByTo
+  to: '/' | '/testImport' | '/api/auth/$'
+  id: '__root__' | '/' | '/testImport' | '/api/auth/$'
+>>>>>>> 4a81322 (made uploade image form)
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+<<<<<<< HEAD
   LoginRoute: typeof LoginRoute
+=======
+  TestImportRoute: typeof TestImportRoute
+>>>>>>> 4a81322 (made uploade image form)
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+<<<<<<< HEAD
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+=======
+    '/testImport': {
+      id: '/testImport'
+      path: '/testImport'
+      fullPath: '/testImport'
+      preLoaderRoute: typeof TestImportRouteImport
+>>>>>>> 4a81322 (made uploade image form)
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -87,7 +128,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+<<<<<<< HEAD
   LoginRoute: LoginRoute,
+=======
+  TestImportRoute: TestImportRoute,
+>>>>>>> 4a81322 (made uploade image form)
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
