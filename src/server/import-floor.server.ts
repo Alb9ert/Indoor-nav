@@ -24,7 +24,6 @@ export const saveImageToServer = async (
   const base64Data = base64.replace(/^data:image\/\w+;base64,/, "")
   const buffer = Buffer.from(base64Data, "base64")
 
-  // Build a unique filename: floor_{floor}_{timestamp}_{originalname}
   const nameWithFloor = `${floorPrefix}${filename}`
   const filepath = path.join(uploadDir, nameWithFloor)
 

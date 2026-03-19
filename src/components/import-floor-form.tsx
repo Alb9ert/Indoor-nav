@@ -76,10 +76,6 @@ const ImportFloorForm = () => {
 
   const onDrop = useCallback(
     (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
-      // Handle rejections directly here too, as onDropRejected
-      // can be unreliable in some react-dropzone versions
-
-      /* CI says this is not good */
       if (rejectedFiles.length > 0) {
         const { code } = rejectedFiles[0].errors[0] ?? {}
         if (code === "file-too-large") {
@@ -99,7 +95,7 @@ const ImportFloorForm = () => {
       setFailedUpload(null)
       setPreview(URL.createObjectURL(selected))
     },
-    [form], // setFailedUpload etc. are stable setState refs, fine to omit
+    [form],
   )
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -113,7 +109,7 @@ const ImportFloorForm = () => {
     setPreview(null)
     setSuccessfullyUploaded(false)
     setShowOverwriteWarning(false)
-    setFailedUpload(null) // ← ADD THIS
+    setFailedUpload(null) 
   }
 
   const handleFloorChange = (value: string | null) => {
@@ -152,7 +148,6 @@ const ImportFloorForm = () => {
 
   return (
     <>
-      {/* Lightbox */}
       {lightboxOpen && existingImage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
@@ -203,7 +198,7 @@ const ImportFloorForm = () => {
             }}
             className="space-y-4"
           >
-            {/* Drag & Drop — always visible */}
+            {/* Drag & Drop */}
             <div
               {...getRootProps()}
               className={`border-2 border-dashed rounded-xl text-center cursor-pointer transition
