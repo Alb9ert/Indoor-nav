@@ -8,6 +8,9 @@ export const saveImageToServer = async (
 ): Promise<{ filepath: string }> => {
   const uploadDir = path.join(process.cwd(), "public", "uploads")
 
+  // Create upload dir of none exists
+  await fs.mkdir(uploadDir, { recursive: true })
+
   // Delete any existing image for this floor
   const existingFiles = await fs.readdir(uploadDir)
   const floorPrefix = `floor_${floor}_`

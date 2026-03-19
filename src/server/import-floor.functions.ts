@@ -1,7 +1,9 @@
 import fs from "fs/promises"
 import path from "path"
+
 import { createServerFn } from "@tanstack/react-start"
-import { saveImageToServer } from "./importFloor.server"
+
+import { saveImageToServer } from "./import-floor.server"
 
 export const uploadImage = createServerFn({ method: "POST" })
   .inputValidator((data: { base64: string; filename: string; floor: string }) => data)

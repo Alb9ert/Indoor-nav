@@ -1,10 +1,10 @@
 "use client"
+import { useForm } from "@tanstack/react-form"
 import { UploadCloud, X, AlertTriangle } from "lucide-react"
 import { useState, useCallback } from "react"
-import { useDropzone } from "react-dropzone"
-import { useForm } from "@tanstack/react-form"
+import { useDropzone, type FileRejection } from "react-dropzone"
 
-import { uploadImage, getFloorImage } from "#/server/importFloor.functions"
+import { uploadImage, getFloorImage } from "#/server/import-floor.functions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -26,7 +26,7 @@ const ACCEPTED_IMAGE_TYPES = {
   "image/tiff": [".tiff", ".tif"],
 }
 
-export default function ImageUploadWithFloor() {
+const ImportFloorForm = () => {
   const [preview, setPreview] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [successfullyUploaded, setSuccessfullyUploaded] = useState(false)
@@ -75,30 +75,37 @@ export default function ImageUploadWithFloor() {
   })
 
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
+      // Handle rejections directly here too, as onDropRejected
+      // can be unreliable in some react-dropzone versions
+
+      /* CI says this is not good */
+      if (rejectedFiles.length > 0) {
+        const { code } = rejectedFiles[0].errors[0] ?? {}
+        if (code === "file-too-large") {
+          setFailedUpload("Image must be 10 MB or smaller")
+        } else if (code === "file-invalid-type") {
+          setFailedUpload("Only PNG, JPEG, SVG, WebP, GIF, BMP, and TIFF files are accepted")
+        }
+        return
+      }
+
+      if (acceptedFiles.length === 0) return
+
       const selected = acceptedFiles[0]
-      if (!selected) return
       form.setFieldValue("file", selected)
       setSuccessfullyUploaded(false)
       setShowOverwriteWarning(false)
+      setFailedUpload(null)
       setPreview(URL.createObjectURL(selected))
     },
-    [form],
+    [form], // setFailedUpload etc. are stable setState refs, fine to omit
   )
-
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: ACCEPTED_IMAGE_TYPES,
     maxFiles: 1,
     maxSize: 10 * 1024 * 1024,
-    onDropRejected: (rejections) => {
-      const error = rejections[0]?.errors[0]
-      if (error?.code === "file-too-large") {
-        setFailedUpload("Image must be 10 MB or smaller")
-      } else if (error?.code === "file-invalid-type") {
-        setFailedUpload("Only PNG, JPEG, SVG, WebP, GIF, BMP, and TIFF files are accepted")
-      }
-    },
   })
 
   const handleRemove = () => {
@@ -106,9 +113,10 @@ export default function ImageUploadWithFloor() {
     setPreview(null)
     setSuccessfullyUploaded(false)
     setShowOverwriteWarning(false)
+    setFailedUpload(null) // ← ADD THIS
   }
 
-  const handleFloorChange = async (value: string | null) => {
+  const handleFloorChange = (value: string | null) => {
     if (!value) return
     form.setFieldValue("floor", value)
     setSuccessfullyUploaded(false)
@@ -148,15 +156,24 @@ export default function ImageUploadWithFloor() {
       {lightboxOpen && existingImage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          onClick={() => setLightboxOpen(false)}
+          onClick={() => {
+            setLightboxOpen(false)
+          }}
         >
-          <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="relative max-w-4xl w-full"
+            onClick={(e) => {
+              e.stopPropagation()
+            }}
+          >
             <Button
               type="button"
               size="icon"
               variant="secondary"
               className="absolute -top-4 -right-4 z-10 rounded-full shadow-lg"
-              onClick={() => setLightboxOpen(false)}
+              onClick={() => {
+                setLightboxOpen(false)
+              }}
             >
               <X className="w-4 h-4" />
             </Button>
@@ -180,7 +197,9 @@ export default function ImageUploadWithFloor() {
           <form
             onSubmit={(e) => {
               e.preventDefault()
-              form.handleSubmit()
+              form.handleSubmit().catch((err: unknown) => {
+                console.error("Form submission error:", err)
+              })
             }}
             className="space-y-4"
           >
@@ -192,7 +211,8 @@ export default function ImageUploadWithFloor() {
                 ${isDragActive ? "border-primary bg-muted" : "border-muted-foreground/30"}`}
             >
               <input {...getInputProps()} />
-              <div className={`flex items-center gap-2 text-sm text-muted-foreground
+              <div
+                className={`flex items-center gap-2 text-sm text-muted-foreground
                 ${preview ? "justify-center flex-row" : "flex-col"}`}
               >
                 <UploadCloud className={preview ? "w-4 h-4 shrink-0" : "w-8 h-8"} />
@@ -268,7 +288,9 @@ export default function ImageUploadWithFloor() {
                   <p className="text-xs text-muted-foreground">Current image:</p>
                   <div
                     className="relative group cursor-zoom-in"
-                    onClick={() => setLightboxOpen(true)}
+                    onClick={() => {
+                      setLightboxOpen(true)
+                    }}
                   >
                     <img
                       src={existingImage}
@@ -294,7 +316,9 @@ export default function ImageUploadWithFloor() {
                     type="button"
                     variant="outline"
                     className="flex-1"
-                    onClick={() => setShowOverwriteWarning(false)}
+                    onClick={() => {
+                      setShowOverwriteWarning(false)
+                    }}
                   >
                     Cancel
                   </Button>
@@ -322,7 +346,7 @@ export default function ImageUploadWithFloor() {
 
             {successfullyUploaded && (
               <p className="text-sm text-green-500 font-bold text-center">
-                {"Floor plan was successfully uploaded for floor " + form.getFieldValue("floor")}
+                {`Floor plan was successfully uploaded for floor ${form.getFieldValue("floor")}`}
               </p>
             )}
           </form>
@@ -331,3 +355,5 @@ export default function ImageUploadWithFloor() {
     </>
   )
 }
+
+export default ImportFloorForm
