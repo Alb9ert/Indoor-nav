@@ -1,27 +1,28 @@
-'use client'
-import { useState, useCallback } from 'react'
-import { useDropzone } from 'react-dropzone'
-import { UploadCloud, X, AlertTriangle } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
+"use client"
+import { UploadCloud, X, AlertTriangle } from "lucide-react"
+import { useState, useCallback } from "react"
+import { useDropzone } from "react-dropzone"
+
+import { uploadImage, getFloorImage } from "#/server/importFloor.functions"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { uploadImage, getFloorImage } from '#/server/importFloor.functions'
+} from "@/components/ui/select"
 
 const ACCEPTED_IMAGE_TYPES = {
-  'image/png': ['.png'],
-  'image/jpeg': ['.jpg', '.jpeg'],
-  'image/svg+xml': ['.svg'],
-  'image/webp': ['.webp'],
-  'image/gif': ['.gif'],
-  'image/bmp': ['.bmp'],
-  'image/tiff': ['.tiff', '.tif'],
+  "image/png": [".png"],
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/svg+xml": [".svg"],
+  "image/webp": [".webp"],
+  "image/gif": [".gif"],
+  "image/bmp": [".bmp"],
+  "image/tiff": [".tiff", ".tif"],
 }
 
 export default function ImageUploadWithFloor() {
@@ -50,12 +51,10 @@ export default function ImageUploadWithFloor() {
     maxSize: 10 * 1024 * 1024,
     onDropRejected: (rejections) => {
       const error = rejections[0]?.errors[0]
-      if (error?.code === 'file-too-large') {
-        setFailedUpload('Image must be 10 MB or smaller')
-      } else if (error?.code === 'file-invalid-type') {
-        setFailedUpload(
-          'Only PNG, JPEG, SVG, WebP, GIF, BMP, and TIFF files are accepted',
-        )
+      if (error?.code === "file-too-large") {
+        setFailedUpload("Image must be 10 MB or smaller")
+      } else if (error?.code === "file-invalid-type") {
+        setFailedUpload("Only PNG, JPEG, SVG, WebP, GIF, BMP, and TIFF files are accepted")
       }
     },
   })
@@ -66,25 +65,25 @@ export default function ImageUploadWithFloor() {
     setUploadedPath(null)
   }
 
-  const handleFloorChange = async (value: string) => {
-    setFloor(value)
-    setUploadedPath(null)
-    setShowOverwriteWarning(false)
+const handleFloorChange = async (value: string | null) => {
+  if (!value) return
+  setFloor(value)
+  setUploadedPath(null)
+  setShowOverwriteWarning(false)
+  setExistingImage(null)
+
+  try {
+    const result = await getFloorImage({ data: { floor: value } })
+    setExistingImage(result.filepath)
+  } catch {
     setExistingImage(null)
-
-    try {
-      const result = await getFloorImage({ data: { floor: value } }) // was: floor (stale state)
-      setExistingImage(result.filepath)
-    } catch {
-      setExistingImage(null)
-    }
   }
-
+}
   const doUpload = async () => {
     if (!file || !floor) return
     const base64 = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
+      reader.onload = () => { resolve(reader.result as string); }
       reader.onerror = reject
       reader.readAsDataURL(file)
     })
@@ -99,8 +98,8 @@ export default function ImageUploadWithFloor() {
       setExistingImage(result.filepath)
       setFailedUpload(null)
     } catch (err) {
-      console.error('Upload failed:', err)
-      setFailedUpload('Upload failed. Please try again.')
+      console.error("Upload failed:", err)
+      setFailedUpload("Upload failed. Please try again.")
     } finally {
       setIsUploading(false)
     }
@@ -111,26 +110,24 @@ export default function ImageUploadWithFloor() {
     setFailedUpload(null)
 
     if (!file) {
-      setFailedUpload('Please upload an image')
+      setFailedUpload("Please upload an image")
       return
     }
     if (file.size > 10 * 1024 * 1024) {
-      setFailedUpload('Image must be 10 MB or smaller')
+      setFailedUpload("Image must be 10 MB or smaller")
       return
     }
     if (floor === null) {
-      setFailedUpload('Please select a floor')
+      setFailedUpload("Please select a floor")
       return
     }
     if (!Object.keys(ACCEPTED_IMAGE_TYPES).includes(file.type)) {
-      setFailedUpload(
-        'Only PNG, JPEG, SVG, WebP, GIF, BMP, and TIFF files are accepted',
-      )
+      setFailedUpload("Only PNG, JPEG, SVG, WebP, GIF, BMP, and TIFF files are accepted")
       return
     }
 
-    setUploadedPath('')
-    setFailedUpload('')
+    setUploadedPath("")
+    setFailedUpload("")
 
     if (!showOverwriteWarning) {
       // Always do a fresh check at submit time, don't trust state
@@ -155,18 +152,15 @@ export default function ImageUploadWithFloor() {
       {lightboxOpen && existingImage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          onClick={() => setLightboxOpen(false)}
+          onClick={() => { setLightboxOpen(false); }}
         >
-          <div
-            className="relative max-w-4xl w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="relative max-w-4xl w-full" onClick={(e) => { e.stopPropagation(); }}>
             <Button
               type="button"
               size="icon"
               variant="secondary"
               className="absolute -top-4 -right-4 z-10 rounded-full shadow-lg"
-              onClick={() => setLightboxOpen(false)}
+              onClick={() => { setLightboxOpen(false); }}
             >
               <X className="w-4 h-4" />
             </Button>
@@ -193,7 +187,7 @@ export default function ImageUploadWithFloor() {
               <div
                 {...getRootProps()}
                 className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition
-                ${isDragActive ? 'border-primary bg-muted' : 'border-muted-foreground/30'}`}
+                ${isDragActive ? "border-primary bg-muted" : "border-muted-foreground/30"}`}
               >
                 <input {...getInputProps()} />
                 <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
@@ -202,9 +196,7 @@ export default function ImageUploadWithFloor() {
                     <p>Drop the image here...</p>
                   ) : (
                     <>
-                      <p className="font-medium text-foreground">
-                        Drag & drop an image here
-                      </p>
+                      <p className="font-medium text-foreground">Drag & drop an image here</p>
                       <p>PNG, JPEG, SVG, WebP, GIF, BMP, TIFF · Max 10 MB</p>
                       <p>or click to browse</p>
                     </>
@@ -255,18 +247,13 @@ export default function ImageUploadWithFloor() {
               <div className="rounded-xl border border-yellow-400 bg-yellow-50 dark:bg-yellow-950/30 p-4 space-y-3">
                 <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400 font-semibold text-sm">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>
-                    A floor plan already exists for floor {floor}. It will be
-                    replaced.
-                  </span>
+                  <span>A floor plan already exists for floor {floor}. It will be replaced.</span>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">
-                    Current image:
-                  </p>
+                  <p className="text-xs text-muted-foreground">Current image:</p>
                   <div
                     className="relative group cursor-zoom-in"
-                    onClick={() => setLightboxOpen(true)}
+                    onClick={() => { setLightboxOpen(true); }}
                   >
                     <img
                       src={existingImage}
@@ -286,13 +273,13 @@ export default function ImageUploadWithFloor() {
                     className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white"
                     disabled={isUploading}
                   >
-                    {isUploading ? 'Uploading...' : 'Yes, overwrite'}
+                    {isUploading ? "Uploading..." : "Yes, overwrite"}
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     className="flex-1"
-                    onClick={() => setShowOverwriteWarning(false)}
+                    onClick={() => { setShowOverwriteWarning(false); }}
                   >
                     Cancel
                   </Button>
@@ -302,19 +289,17 @@ export default function ImageUploadWithFloor() {
 
             {!showOverwriteWarning && (
               <Button type="submit" className="w-full" disabled={isUploading}>
-                {isUploading ? 'Uploading...' : 'Upload Image'}
+                {isUploading ? "Uploading..." : "Upload Image"}
               </Button>
             )}
 
             {failedUpload && (
-              <p className="text-sm text-red-500 font-bold text-center">
-                {failedUpload}
-              </p>
+              <p className="text-sm text-red-500 font-bold text-center">{failedUpload}</p>
             )}
 
             {uploadedPath && (
               <p className="text-sm text-green-500 font-bold text-center">
-                {'Floor plan was successfully uploaded for floor ' + floor}
+                {"Floor plan was successfully uploaded for floor " + floor}
               </p>
             )}
           </form>

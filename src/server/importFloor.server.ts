@@ -4,7 +4,7 @@ import path from "path"
 export const saveImageToServer = async (
   base64: string,
   filename: string,
-  floor: string
+  floor: string,
 ): Promise<{ filepath: string }> => {
   const uploadDir = path.join(process.cwd(), "public", "uploads")
 

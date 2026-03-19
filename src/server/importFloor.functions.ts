@@ -1,16 +1,17 @@
-import { createServerFn } from "@tanstack/react-start"
-import { saveImageToServer } from "./importFloor.server"
 import fs from "fs/promises"
 import path from "path"
+import { createServerFn } from "@tanstack/react-start"
+import { saveImageToServer } from "./importFloor.server"
 
-export const uploadImage = createServerFn({ method: "POST" }).handler(
-  async ({ data }: { data: { base64: string; filename: string; floor: string } }) => {
+export const uploadImage = createServerFn({ method: "POST" })
+  .inputValidator((data: { base64: string; filename: string; floor: string }) => data)
+  .handler(async ({ data }) => {
     return await saveImageToServer(data.base64, data.filename, data.floor)
-  }
-)
+  })
 
-export const getFloorImage = createServerFn({ method: "GET" }).handler(
-  async ({ data }: { data: { floor: string } }) => {
+export const getFloorImage = createServerFn({ method: "POST" })
+  .inputValidator((data: { floor: string }) => data)
+  .handler(async ({ data }) => {
     const uploadDir = path.join(process.cwd(), "public", "uploads")
     try {
       const files = await fs.readdir(uploadDir)
@@ -19,5 +20,4 @@ export const getFloorImage = createServerFn({ method: "GET" }).handler(
     } catch {
       return { filepath: null }
     }
-  }
-)
+  })
