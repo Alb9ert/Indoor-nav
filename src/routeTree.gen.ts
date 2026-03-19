@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -19,13 +20,21 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
 =======
 import { Route as TestImportRouteImport } from './routes/testImport'
+=======
+import { Route as TestImportRouteImport } from './routes/test-import'
+>>>>>>> fe6f833 (Fixed ci errors)
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const TestImportRoute = TestImportRouteImport.update({
+<<<<<<< HEAD
   id: '/testImport',
   path: '/testImport',
 >>>>>>> 4a81322 (made uploade image form)
+=======
+  id: '/test-import',
+  path: '/test-import',
+>>>>>>> fe6f833 (Fixed ci errors)
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -42,33 +51,46 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
 <<<<<<< HEAD
-  '/login': typeof LoginRoute
-=======
-  '/testImport': typeof TestImportRoute
->>>>>>> 4a81322 (made uploade image form)
-  '/api/auth/$': typeof ApiAuthSplatRoute
-}
-export interface FileRoutesByTo {
-  '/': typeof IndexRoute
 <<<<<<< HEAD
   '/login': typeof LoginRoute
 =======
   '/testImport': typeof TestImportRoute
 >>>>>>> 4a81322 (made uploade image form)
+=======
+  '/test-import': typeof TestImportRoute
+>>>>>>> fe6f833 (Fixed ci errors)
+  '/api/auth/$': typeof ApiAuthSplatRoute
+}
+export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+<<<<<<< HEAD
+<<<<<<< HEAD
+  '/login': typeof LoginRoute
+=======
+  '/testImport': typeof TestImportRoute
+>>>>>>> 4a81322 (made uploade image form)
+=======
+  '/test-import': typeof TestImportRoute
+>>>>>>> fe6f833 (Fixed ci errors)
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
 <<<<<<< HEAD
+<<<<<<< HEAD
   '/login': typeof LoginRoute
 =======
   '/testImport': typeof TestImportRoute
 >>>>>>> 4a81322 (made uploade image form)
+=======
+  '/test-import': typeof TestImportRoute
+>>>>>>> fe6f833 (Fixed ci errors)
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
+<<<<<<< HEAD
 <<<<<<< HEAD
   fullPaths: '/' | '/login' | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
@@ -80,6 +102,12 @@ export interface FileRouteTypes {
   to: '/' | '/testImport' | '/api/auth/$'
   id: '__root__' | '/' | '/testImport' | '/api/auth/$'
 >>>>>>> 4a81322 (made uploade image form)
+=======
+  fullPaths: '/' | '/test-import' | '/api/auth/$'
+  fileRoutesByTo: FileRoutesByTo
+  to: '/' | '/test-import' | '/api/auth/$'
+  id: '__root__' | '/' | '/test-import' | '/api/auth/$'
+>>>>>>> fe6f833 (Fixed ci errors)
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -95,6 +123,7 @@ export interface RootRouteChildren {
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
 <<<<<<< HEAD
+<<<<<<< HEAD
     '/login': {
       id: '/login'
       path: '/login'
@@ -105,6 +134,12 @@ declare module '@tanstack/react-router' {
       id: '/testImport'
       path: '/testImport'
       fullPath: '/testImport'
+=======
+    '/test-import': {
+      id: '/test-import'
+      path: '/test-import'
+      fullPath: '/test-import'
+>>>>>>> fe6f833 (Fixed ci errors)
       preLoaderRoute: typeof TestImportRouteImport
 >>>>>>> 4a81322 (made uploade image form)
       parentRoute: typeof rootRouteImport
