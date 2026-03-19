@@ -109,7 +109,7 @@ const ImportFloorForm = () => {
     setPreview(null)
     setSuccessfullyUploaded(false)
     setShowOverwriteWarning(false)
-    setFailedUpload(null) 
+    setFailedUpload(null)
   }
 
   const handleFloorChange = (value: string | null) => {
