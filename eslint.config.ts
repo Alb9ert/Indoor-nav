@@ -187,6 +187,10 @@ export default [
       ...reactHooks.configs.recommended.rules,
       // Rule for Vite's Fast Refresh feature.
       "react-refresh/only-export-components": "warn",
+      // No useless catch
+      "no-useless-catch": "error",
+      // No empty block
+      "no-empty": "error",
       // We turn this off because TypeScript handles prop type checking for us.
       "react/prop-types": "off",
       // Enforces self-closing tags for components with no children, e.g. `<div />`.
