@@ -41,7 +41,7 @@ export const LoginForm = ({ className, ...props }: React.ComponentProps<"div">) 
           <CardDescription>Enter the admin password to access maintenance features</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={void handleSubmit}>
+          <form onSubmit={(e) => { handleSubmit(e).catch(setError); }}>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="password">Password</FieldLabel>
