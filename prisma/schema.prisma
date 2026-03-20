@@ -73,3 +73,132 @@ model Verification {
 
   @@map("verification")
 }
+
+model Section {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rooms     Room[]
+}
+
+model Placement {
+  id         String      @id @default(cuid())
+  x          Int
+  y          Int
+  z          Int
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  node       Node?
+  navigation Navigation?
+}
+
+model Room {
+  id            String    @id
+  isActivated   Boolean   @default(true)
+  semanticNames String[]
+  type          RoomType
+
+  /// PostGIS geometry columns
+  pointZ        Unsupported("geometry(PointZ, 4326)")?
+  polygon       Unsupported("geometry(Polygon, 4326)")?
+  multiPolygon  Unsupported("geometry(MultiPolygon, 4326)")?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sectionId     String?
+  section       Section?  @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+
+  nodes         Node[]
+  navigations   Navigation[]
+
+  @@index([adminId])
+  @@index([sectionId])
+  @@index([type])
+  @@index([isActivated])
+}
+
+model Node {
+  id            String    @id @default(cuid())
+  type          NodeType
+  isActivated   Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  placementId   String?   @unique
+  placement     Placement? @relation(fields: [placementId], references: [id], onDelete: SetNull)
+
+  roomId        String?
+  room          Room?     @relation(fields: [roomId], references: [id], onDelete: SetNull)
+
+  navigationId  String?
+  navigation    Navigation? @relation(fields: [navigationId], references: [id], onDelete: SetNull)
+
+  edgesFrom     Edge[]    @relation("EdgeFromNode")
+  edgesTo       Edge[]    @relation("EdgeToNode")
+
+  @@index([placementId])
+  @@index([roomId])
+  @@index([navigationId])
+  @@index([type])
+  @@index([isActivated])
+}
+
+model Edge {
+  id          String   @id @default(cuid())
+  distance    Float
+  doors       Boolean  @default(false)
+  stairs      Boolean  @default(false)
+  elevators   Boolean  @default(false)
+  isActivated Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  /// Undirected edge stored as two node references.
+  /// Normalize ordering in backend logic before insert.
+  fromNodeId  String
+  toNodeId    String
+
+  fromNode    Node     @relation("EdgeFromNode", fields: [fromNodeId], references: [id], onDelete: Cascade)
+  toNode      Node     @relation("EdgeToNode", fields: [toNodeId], references: [id], onDelete: Cascade)
+
+  @@unique([fromNodeId, toNodeId])
+  @@index([fromNodeId])
+  @@index([toNodeId])
+  @@index([isActivated])
+}
+
+model Navigation {
+  id           String                 @id @default(cuid())
+  preference   NavigationPreference
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  roomId       String
+  room         Room                   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  placementId  String?                @unique
+  placement    Placement?             @relation(fields: [placementId], references: [id], onDelete: SetNull)
+
+  nodes        Node[]
+
+  @@index([roomId])
+  @@index([preference])
+}
+
+enum NodeType {
+  DEFAULT
+}
+
+enum RoomType {
+  DEFAULT
+}
+
+enum NavigationPreference {
+  DEFAULT
+  HANDICAP_FRIENDLY
+  SIMPLEST_ROUTE
+}
