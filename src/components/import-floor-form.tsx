@@ -1,4 +1,3 @@
-"use client"
 import { useForm } from "@tanstack/react-form"
 import { UploadCloud, X, AlertTriangle } from "lucide-react"
 import { useState, useCallback } from "react"
@@ -19,34 +18,34 @@ import {
 const ACCEPTED_IMAGE_TYPES = {
   "image/png": [".png"],
   "image/jpeg": [".jpg", ".jpeg"],
-  "image/svg+xml": [".svg"],
-  "image/webp": [".webp"],
-  "image/gif": [".gif"],
-  "image/bmp": [".bmp"],
-  "image/tiff": [".tiff", ".tif"],
 }
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
+
+type UploadState = "idle" | "uploading" | "success" | "error"
 
 const ImportFloorForm = () => {
   const [preview, setPreview] = useState<string | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
-  const [successfullyUploaded, setSuccessfullyUploaded] = useState(false)
-  const [failedUpload, setFailedUpload] = useState<string | null>(null)
-  const [existingImage, setExistingImage] = useState<string | null>(null)
-  const [showOverwriteWarning, setShowOverwriteWarning] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState<{ state: UploadState; message?: string }>({
+    state: "idle",
+  })
+  const [overwrite, setOverwrite] = useState<{ show: boolean; existingImage: string | null }>({
+    show: false,
+    existingImage: null,
+  })
 
   const form = useForm({
     defaultValues: {
-      file: null as File | null,
-      floor: null as string | null,
+    file: null as File | null,
+    floor: "",
     },
     validators: {
       onSubmit: ({ value }) => {
         if (!value.file) return "Please upload an image"
-        if (value.file.size > 10 * 1024 * 1024) return "Image must be 10 MB or smaller"
+        if (value.file.size > MAX_FILE_SIZE) return "Image must be 10 MB or smaller"
         if (!value.floor) return "Please select a floor"
         if (!Object.keys(ACCEPTED_IMAGE_TYPES).includes(value.file.type))
-          return "Only PNG, JPEG, SVG, WebP, GIF, BMP, and TIFF files are accepted"
+          return `Only ${ACCEPTED_IMAGE_TYPES} files are accepted`
         return undefined
       },
     },
@@ -54,19 +53,16 @@ const ImportFloorForm = () => {
       const { file, floor } = value
       if (!file || !floor) return
 
-      setFailedUpload(null)
-      setSuccessfullyUploaded(false)
+      setUploadStatus({ state: "idle" })
 
-      if (!showOverwriteWarning) {
+      if (!overwrite.show) {
         try {
           const result = await getFloorImage({ data: { floor } })
           if (result.filepath) {
-            setExistingImage(result.filepath)
-            setShowOverwriteWarning(true)
+            setOverwrite({ show: true, existingImage: result.filepath })
             return
           }
         } catch {
-          // No existing image, safe to proceed
         }
       }
 
@@ -79,9 +75,12 @@ const ImportFloorForm = () => {
       if (rejectedFiles.length > 0) {
         const { code } = rejectedFiles[0].errors[0] ?? {}
         if (code === "file-too-large") {
-          setFailedUpload("Image must be 10 MB or smaller")
+          setUploadStatus({ state: "error", message: "Image must be 10 MB or smaller" })
         } else if (code === "file-invalid-type") {
-          setFailedUpload("Only PNG, JPEG, SVG, WebP, GIF, BMP, and TIFF files are accepted")
+          setUploadStatus({
+            state: "error",
+            message: `Only ${Object.values(ACCEPTED_IMAGE_TYPES).flat().join(", ")} files are accepted`,
+          })
         }
         return
       }
@@ -90,90 +89,74 @@ const ImportFloorForm = () => {
 
       const selected = acceptedFiles[0]
       form.setFieldValue("file", selected)
-      setSuccessfullyUploaded(false)
-      setShowOverwriteWarning(false)
-      setFailedUpload(null)
+      setUploadStatus({ state: "idle" })
+      setOverwrite({ show: false, existingImage: null })
       setPreview(URL.createObjectURL(selected))
     },
     [form],
   )
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: ACCEPTED_IMAGE_TYPES,
     maxFiles: 1,
-    maxSize: 10 * 1024 * 1024,
+    maxSize: MAX_FILE_SIZE,
   })
 
   const handleRemove = () => {
     form.setFieldValue("file", null)
     setPreview(null)
-    setSuccessfullyUploaded(false)
-    setShowOverwriteWarning(false)
-    setFailedUpload(null)
+    setUploadStatus({ state: "idle" })
+    setOverwrite({ show: false, existingImage: null })
   }
 
   const handleFloorChange = (value: string | null) => {
     if (!value) return
     form.setFieldValue("floor", value)
-    setSuccessfullyUploaded(false)
-    setShowOverwriteWarning(false)
-    setExistingImage(null)
+    setUploadStatus({ state: "idle" })
+    setOverwrite({ show: false, existingImage: null })
   }
 
   const doUpload = async (file: File, floor: string) => {
     const base64 = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader()
-      reader.onload = () => {
-        resolve(reader.result as string)
-      }
+      reader.onload = () => resolve(reader.result as string)
       reader.onerror = reject
       reader.readAsDataURL(file)
     })
 
     try {
-      setIsUploading(true)
-      setShowOverwriteWarning(false)
-      await uploadImage({
-        data: { base64, filename: file.name, floor },
-      })
-      setFailedUpload(null)
+      setUploadStatus({ state: "uploading" })
+      setOverwrite({ show: false, existingImage: null })
+      await uploadImage({ data: { base64, filename: file.name, floor } })
+      setUploadStatus({ state: "success" })
     } catch (err) {
       console.error("Upload failed:", err)
-      setFailedUpload("Upload failed. Please try again.")
-    } finally {
-      setIsUploading(false)
-      setSuccessfullyUploaded(true)
+      setUploadStatus({ state: "error", message: "Upload failed. Please try again." })
     }
   }
 
+  const isUploading = uploadStatus.state === "uploading"
+
   return (
     <>
-      {lightboxOpen && existingImage && (
+      {lightboxOpen && overwrite.existingImage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          onClick={() => {
-            setLightboxOpen(false)
-          }}
+          onClick={() => setLightboxOpen(false)}
         >
-          <div
-            className="relative max-w-4xl w-full"
-            onClick={(e) => {
-              e.stopPropagation()
-            }}
-          >
+          <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
             <Button
               type="button"
               size="icon"
               variant="secondary"
               className="absolute -top-4 -right-4 z-10 rounded-full shadow-lg"
-              onClick={() => {
-                setLightboxOpen(false)
-              }}
+              onClick={() => setLightboxOpen(false)}
             >
               <X className="w-4 h-4" />
             </Button>
             <img
-              src={existingImage}
+              src={overwrite.existingImage}
               alt="Current floor plan"
               className="rounded-xl w-full max-h-[80vh] object-contain shadow-2xl"
             />
@@ -218,7 +201,7 @@ const ImportFloorForm = () => {
                 ) : (
                   <>
                     <p className="font-medium text-foreground">Drag & drop an image here</p>
-                    <p>PNG, JPEG, SVG, WebP, GIF, BMP, TIFF · Max 10 MB</p>
+                    <p>{Object.values(ACCEPTED_IMAGE_TYPES).flat().join(", ")} · Max 10 MB</p>
                     <p>or click to browse</p>
                   </>
                 )}
@@ -270,7 +253,7 @@ const ImportFloorForm = () => {
             </form.Field>
 
             {/* Overwrite Warning */}
-            {showOverwriteWarning && existingImage && (
+            {overwrite.show && overwrite.existingImage && (
               <div className="rounded-xl border border-yellow-400 bg-yellow-50 dark:bg-yellow-950/30 p-4 space-y-3">
                 <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400 font-semibold text-sm">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -283,12 +266,10 @@ const ImportFloorForm = () => {
                   <p className="text-xs text-muted-foreground">Current image:</p>
                   <div
                     className="relative group cursor-zoom-in"
-                    onClick={() => {
-                      setLightboxOpen(true)
-                    }}
+                    onClick={() => setLightboxOpen(true)}
                   >
                     <img
-                      src={existingImage}
+                      src={overwrite.existingImage}
                       alt="Existing floor plan"
                       className="rounded-lg w-full h-36 object-cover border border-yellow-300 transition group-hover:brightness-75"
                     />
@@ -311,9 +292,7 @@ const ImportFloorForm = () => {
                     type="button"
                     variant="outline"
                     className="flex-1"
-                    onClick={() => {
-                      setShowOverwriteWarning(false)
-                    }}
+                    onClick={() => setOverwrite({ show: false, existingImage: null })}
                   >
                     Cancel
                   </Button>
@@ -321,7 +300,7 @@ const ImportFloorForm = () => {
               </div>
             )}
 
-            {!showOverwriteWarning && (
+            {!overwrite.show && (
               <Button type="submit" className="w-full" disabled={isUploading}>
                 {isUploading ? "Uploading..." : "Upload Image"}
               </Button>
@@ -335,11 +314,11 @@ const ImportFloorForm = () => {
               }
             </form.Subscribe>
 
-            {failedUpload && (
-              <p className="text-sm text-red-500 font-bold text-center">{failedUpload}</p>
+            {uploadStatus.state === "error" && (
+              <p className="text-sm text-red-500 font-bold text-center">{uploadStatus.message}</p>
             )}
 
-            {successfullyUploaded && (
+            {uploadStatus.state === "success" && (
               <p className="text-sm text-green-500 font-bold text-center">
                 {`Floor plan was successfully uploaded for floor ${form.getFieldValue("floor")}`}
               </p>
