@@ -73,10 +73,8 @@ export const useFloorUpload = () => {
       if (!overwrite.show) {
         try {
           const result = await getFloorImage({ data: { floor } })
-          if (result.filepath) {
-            setOverwrite({ show: true, existingImage: result.filepath })
-            return
-          }
+          setOverwrite({ show: true, existingImage: result.filepath })
+          return
         } catch {
           setUploadStatus({
             state: "error",

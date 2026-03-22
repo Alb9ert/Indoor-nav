@@ -22,15 +22,22 @@ export const uploadImage = createServerFn({ method: "POST" })
     await saveImageToServer(data.base64, data.filename, data.floor)
   })
 
-export const getFloorImage = createServerFn({ method: "POST" })
+export const getFloorImage = createServerFn({ method: "GET" })
   .inputValidator(getFloorImageSchema)
   .handler(async ({ data }) => {
     const uploadDir = path.join(process.cwd(), "public", "uploads")
+
+    let files: string[]
     try {
-      const files = await fs.readdir(uploadDir)
-      const existing = files.find((f) => f.startsWith(`floor_${data.floor}_`))
-      return { filepath: existing ? `/uploads/${existing}` : null }
+      files = await fs.readdir(uploadDir)
     } catch {
-      return { filepath: null }
+      throw new Error("Upload directory not found")
     }
+
+    const existing = files.find((f) => f.startsWith(`floor_${data.floor}_`))
+    if (!existing) {
+      throw new Error(`Floor image not found for floor: ${data.floor}`)
+    }
+
+    return { filepath: `/uploads/${existing}` }
   })
