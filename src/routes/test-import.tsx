@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import ImportFloorForm from "#/components/import-floor-form"
+import ImportFloorForm from "../components/import-floor/import-floor-form"
 
 const RouteComponent = () => {
   return <ImportFloorForm />
