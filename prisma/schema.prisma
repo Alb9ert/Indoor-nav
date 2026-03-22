@@ -83,18 +83,6 @@ model Section {
   rooms     Room[]
 }
 
-model Placement {
-  id         String      @id @default(cuid())
-  x          Int
-  y          Int
-  z          Int
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-
-  node       Node?
-  navigation Navigation?
-}
-
 model Room {
   id            String    @id
   isActivated   Boolean   @default(true)
@@ -112,10 +100,10 @@ model Room {
   sectionId     String?
   section       Section?  @relation(fields: [sectionId], references: [id], onDelete: SetNull)
 
+  /// A room can have many nodes.
+  /// A node may optionally belong to a room.
   nodes         Node[]
-  navigations   Navigation[]
 
-  @@index([adminId])
   @@index([sectionId])
   @@index([type])
   @@index([isActivated])
@@ -123,28 +111,24 @@ model Room {
 
 model Node {
   id            String    @id @default(cuid())
+  x             Int
+  y             Int
+  z             Int
   type          NodeType
   isActivated   Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  placementId   String?   @unique
-  placement     Placement? @relation(fields: [placementId], references: [id], onDelete: SetNull)
-
   roomId        String?
   room          Room?     @relation(fields: [roomId], references: [id], onDelete: SetNull)
-
-  navigationId  String?
-  navigation    Navigation? @relation(fields: [navigationId], references: [id], onDelete: SetNull)
 
   edgesFrom     Edge[]    @relation("EdgeFromNode")
   edgesTo       Edge[]    @relation("EdgeToNode")
 
-  @@index([placementId])
   @@index([roomId])
-  @@index([navigationId])
   @@index([type])
   @@index([isActivated])
+  @@index([x, y, z])
 }
 
 model Edge {
@@ -171,34 +155,10 @@ model Edge {
   @@index([isActivated])
 }
 
-model Navigation {
-  id           String                 @id @default(cuid())
-  preference   NavigationPreference
-  createdAt    DateTime               @default(now())
-  updatedAt    DateTime               @updatedAt
-
-  roomId       String
-  room         Room                   @relation(fields: [roomId], references: [id], onDelete: Cascade)
-
-  placementId  String?                @unique
-  placement    Placement?             @relation(fields: [placementId], references: [id], onDelete: SetNull)
-
-  nodes        Node[]
-
-  @@index([roomId])
-  @@index([preference])
-}
-
 enum NodeType {
   DEFAULT
 }
 
 enum RoomType {
   DEFAULT
-}
-
-enum NavigationPreference {
-  DEFAULT
-  HANDICAP_FRIENDLY
-  SIMPLEST_ROUTE
 }
