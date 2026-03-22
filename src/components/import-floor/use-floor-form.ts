@@ -2,6 +2,7 @@ import { useForm } from "@tanstack/react-form"
 import { useState, useCallback } from "react"
 import { useDropzone, type FileRejection } from "react-dropzone"
 import { z } from "zod"
+
 import { uploadImage, getFloorImage } from "#/server/import-floor.functions"
 
 export const ACCEPTED_IMAGE_TYPES = {
@@ -37,7 +38,9 @@ export const useFloorUpload = () => {
   const doUpload = async (file: File, floor: string) => {
     const base64 = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader()
-      reader.onload = () => { resolve(reader.result as string) }
+      reader.onload = () => {
+        resolve(reader.result as string)
+      }
       reader.onerror = reject
       reader.readAsDataURL(file)
     })

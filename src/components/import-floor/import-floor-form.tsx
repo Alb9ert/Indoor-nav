@@ -1,4 +1,5 @@
 import { UploadCloud, X } from "lucide-react"
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+
 import { useFloorUpload, ACCEPTED_IMAGE_TYPES } from "./use-floor-form"
 
 const ImportFloorForm = () => {
@@ -38,18 +40,24 @@ const ImportFloorForm = () => {
       {lightboxOpen && overwrite.existingImage && (
         <div
           className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          onClick={() => { setLightboxOpen(false) }}
+          onClick={() => {
+            setLightboxOpen(false)
+          }}
         >
           <div
             className="relative max-w-4xl w-full"
-            onClick={(e) => { e.stopPropagation() }}
+            onClick={(e) => {
+              e.stopPropagation()
+            }}
           >
             <Button
               type="button"
               size="icon"
               variant="secondary"
               className="absolute -top-4 -right-4 z-10 rounded-full shadow-lg"
-              onClick={() => { setLightboxOpen(false) }}
+              onClick={() => {
+                setLightboxOpen(false)
+              }}
             >
               <X className="w-4 h-4" />
             </Button>
@@ -86,7 +94,9 @@ const ImportFloorForm = () => {
                 ${isDragActive ? "border-primary bg-muted" : "border-muted-foreground/30"}`}
             >
               <input {...getInputProps()} />
-              <div className={`flex items-center gap-2 text-sm text-muted-foreground ${preview ? "justify-center flex-row" : "flex-col"}`}>
+              <div
+                className={`flex items-center gap-2 text-sm text-muted-foreground ${preview ? "justify-center flex-row" : "flex-col"}`}
+              >
                 <UploadCloud className={preview ? "w-4 h-4 shrink-0" : "w-8 h-8"} />
                 {isDragActive ? (
                   <p>Drop the image here...</p>
@@ -104,8 +114,18 @@ const ImportFloorForm = () => {
 
             {preview && (
               <div className="relative">
-                <img src={preview} alt="Preview" className="rounded-xl w-full h-48 object-cover border" />
-                <Button type="button" size="icon" variant="destructive" className="absolute top-2 right-2" onClick={handleRemove}>
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="rounded-xl w-full h-48 object-cover border"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="destructive"
+                  className="absolute top-2 right-2"
+                  onClick={handleRemove}
+                >
                   <X className="w-4 h-4" />
                 </Button>
               </div>
@@ -119,7 +139,9 @@ const ImportFloorForm = () => {
                     id="floor"
                     placeholder="Enter floor number"
                     value={field.state.value}
-                    onChange={(e) => { handleFloorChange(e.target.value) }}
+                    onChange={(e) => {
+                      handleFloorChange(e.target.value)
+                    }}
                   />
                   {field.state.meta.errors.length > 0 && (
                     <p className="text-sm text-red-500">
@@ -134,19 +156,24 @@ const ImportFloorForm = () => {
 
             <AlertDialog
               open={overwrite.show && !!overwrite.existingImage}
-              onOpenChange={(open) => { if (!open) setOverwrite({ show: false, existingImage: null }) }}
+              onOpenChange={(open) => {
+                if (!open) setOverwrite({ show: false, existingImage: null })
+              }}
             >
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Overwrite existing floor plan?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    A floor plan already exists for floor {form.getFieldValue("floor")}. This will replace it.
+                    A floor plan already exists for floor {form.getFieldValue("floor")}. This will
+                    replace it.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 {overwrite.existingImage && (
                   <div
                     className="relative group cursor-zoom-in"
-                    onClick={() => { setLightboxOpen(true) }}
+                    onClick={() => {
+                      setLightboxOpen(true)
+                    }}
                   >
                     <img
                       src={overwrite.existingImage}
@@ -161,7 +188,11 @@ const ImportFloorForm = () => {
                   </div>
                 )}
                 <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => { setOverwrite({ show: false, existingImage: null }) }}>
+                  <AlertDialogCancel
+                    onClick={() => {
+                      setOverwrite({ show: false, existingImage: null })
+                    }}
+                  >
                     Cancel
                   </AlertDialogCancel>
                   <AlertDialogAction
