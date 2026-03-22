@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 
+import { ThreeScene } from "#/components/threeJS/map-scene"
 import { Input } from "#/components/ui/input"
 import { getTodos } from "#/server/todo.functions"
-import { ThreeScene } from "#/components/threeJS/map-scene"
 
 const App = () => {
   const { data: todos } = useQuery({ queryKey: ["todos"], queryFn: getTodos })
