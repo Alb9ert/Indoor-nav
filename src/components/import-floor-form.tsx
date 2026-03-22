@@ -2,18 +2,23 @@ import { useForm } from "@tanstack/react-form"
 import { UploadCloud, X, AlertTriangle } from "lucide-react"
 import { useState, useCallback } from "react"
 import { useDropzone, type FileRejection } from "react-dropzone"
+import { z } from "zod"
 
 import { uploadImage, getFloorImage } from "#/server/import-floor.functions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog"
 
 const ACCEPTED_IMAGE_TYPES = {
   "image/png": [".png"],
@@ -34,20 +39,24 @@ const ImportFloorForm = () => {
     existingImage: null,
   })
 
+  const formSchema = z.object({
+    file: z
+      .instanceof(File, { message: "Please upload an image" })
+      .refine((f) => f.size <= MAX_FILE_SIZE, "Image must be 10 MB or smaller")
+      .refine(
+        (f) => Object.keys(ACCEPTED_IMAGE_TYPES).includes(f.type),
+        `Only ${Object.values(ACCEPTED_IMAGE_TYPES).flat().join(", ")} files are accepted`,
+      ),
+    floor: z.string().min(1, "Please select a floor"),
+  })
+
   const form = useForm({
     defaultValues: {
-    file: null as File | null,
-    floor: "",
+      file: null as File | null,
+      floor: "",
     },
     validators: {
-      onSubmit: ({ value }) => {
-        if (!value.file) return "Please upload an image"
-        if (value.file.size > MAX_FILE_SIZE) return "Image must be 10 MB or smaller"
-        if (!value.floor) return "Please select a floor"
-        if (!Object.keys(ACCEPTED_IMAGE_TYPES).includes(value.file.type))
-          return `Only ${ACCEPTED_IMAGE_TYPES} files are accepted`
-        return undefined
-      },
+      onSubmit: formSchema,
     },
     onSubmit: async ({ value }) => {
       const { file, floor } = value
@@ -63,6 +72,11 @@ const ImportFloorForm = () => {
             return
           }
         } catch {
+          setUploadStatus({
+            state: "error",
+            message: "Failed to check existing floor plan. Please try again.",
+          })
+          return
         }
       }
 
@@ -142,7 +156,7 @@ const ImportFloorForm = () => {
     <>
       {lightboxOpen && overwrite.existingImage && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
           onClick={() => setLightboxOpen(false)}
         >
           <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
@@ -207,7 +221,6 @@ const ImportFloorForm = () => {
                 )}
               </div>
             </div>
-
             {/* Preview */}
             {preview && (
               <div className="relative">
@@ -227,9 +240,24 @@ const ImportFloorForm = () => {
                 </Button>
               </div>
             )}
-
             {/* Floor Selector */}
             <form.Field name="floor">
+              {(field) => (
+                <div className="space-y-2">
+                  <Label htmlFor="floor">Floor</Label>
+                  <Input
+                    id="floor"
+                    placeholder="Enter floor number"
+                    value={field.state.value}
+                    onChange={(e) => handleFloorChange(e.target.value)}
+                  />
+                  {field.state.meta.errors.length > 0 && (
+                    <p className="text-sm text-red-500">{field.state.meta.errors[0]}</p>
+                  )}
+                </div>
+              )}
+            </form.Field>
+            {/* <form.Field name="floor">
               {(field) => (
                 <div className="space-y-2">
                   <Label htmlFor="floor">Select Floor</Label>
@@ -250,20 +278,21 @@ const ImportFloorForm = () => {
                   )}
                 </div>
               )}
-            </form.Field>
-
+            </form.Field> */}
             {/* Overwrite Warning */}
-            {overwrite.show && overwrite.existingImage && (
-              <div className="rounded-xl border border-yellow-400 bg-yellow-50 dark:bg-yellow-950/30 p-4 space-y-3">
-                <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400 font-semibold text-sm">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>
-                    A floor plan already exists for floor {form.getFieldValue("floor")}. It will be
-                    replaced.
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Current image:</p>
+            <AlertDialog
+              open={overwrite.show && !!overwrite.existingImage}
+              onOpenChange={(open) => !open && setOverwrite({ show: false, existingImage: null })}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Overwrite existing floor plan?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    A floor plan already exists for floor {form.getFieldValue("floor")}. This will
+                    replace it.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                {overwrite.existingImage && (
                   <div
                     className="relative group cursor-zoom-in"
                     onClick={() => setLightboxOpen(true)}
@@ -271,7 +300,7 @@ const ImportFloorForm = () => {
                     <img
                       src={overwrite.existingImage}
                       alt="Existing floor plan"
-                      className="rounded-lg w-full h-36 object-cover border border-yellow-300 transition group-hover:brightness-75"
+                      className="rounded-lg w-full h-48 object-cover border transition group-hover:brightness-75"
                     />
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                       <span className="bg-black/60 text-white text-xs font-medium px-3 py-1 rounded-full">
@@ -279,33 +308,31 @@ const ImportFloorForm = () => {
                       </span>
                     </div>
                   </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    type="submit"
-                    className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white"
-                    disabled={isUploading}
-                  >
-                    {isUploading ? "Uploading..." : "Yes, overwrite"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1"
+                )}
+                <AlertDialogFooter>
+                  <AlertDialogCancel
                     onClick={() => setOverwrite({ show: false, existingImage: null })}
                   >
                     Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
-
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={isUploading}
+                    onClick={async () => {
+                      const file = form.getFieldValue("file")
+                      const floor = form.getFieldValue("floor")
+                      if (file && floor) await doUpload(file, floor)
+                    }}
+                  >
+                    {isUploading ? "Uploading..." : "Yes, overwrite"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             {!overwrite.show && (
               <Button type="submit" className="w-full" disabled={isUploading}>
                 {isUploading ? "Uploading..." : "Upload Image"}
               </Button>
             )}
-
             <form.Subscribe selector={(state) => state.errors}>
               {(errors) =>
                 errors.length > 0 && (
@@ -313,11 +340,9 @@ const ImportFloorForm = () => {
                 )
               }
             </form.Subscribe>
-
             {uploadStatus.state === "error" && (
               <p className="text-sm text-red-500 font-bold text-center">{uploadStatus.message}</p>
             )}
-
             {uploadStatus.state === "success" && (
               <p className="text-sm text-green-500 font-bold text-center">
                 {`Floor plan was successfully uploaded for floor ${form.getFieldValue("floor")}`}
