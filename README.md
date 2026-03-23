@@ -1,21 +1,21 @@
 # Indoor Navigation
 
-A bachelor's project for the Computer Science program at Aalborg University. The system is a fullstack PWA that lets users navigate indoors across the Copenhagen Campus. Navigation is powered by a graph-based A* implementation, with 3D floor plan rendering handled through Three.js.
+A bachelor's project for the Computer Science program at Aalborg University. The system is a fullstack PWA that lets users navigate indoors across the Copenhagen Campus. Navigation is powered by a graph-based A\* implementation, with 3D floor plan rendering handled through Three.js.
 
 ## Tech stack
 
-| Area | Technology |
-|---|---|
-| Framework | [TanStack Start](https://tanstack.com/start) (React 19, SSR) |
-| Routing & data | [TanStack Router](https://tanstack.com/router) + [TanStack Query](https://tanstack.com/query) |
-| 3D rendering | [Three.js](https://threejs.org/) |
-| Database | PostgreSQL with [PostGIS](https://postgis.net/) for spatial data |
-| ORM | [Prisma](https://www.prisma.io/) |
-| Auth | [Better Auth](https://www.better-auth.com/) |
-| UI | [shadcn/ui](https://ui.shadcn.com/) + [Tailwind CSS v4](https://tailwindcss.com/) |
-| Validation | [Zod](https://zod.dev/) |
-| Testing | [Vitest](https://vitest.dev/) + [Testing Library](https://testing-library.com/) |
-| Linting & formatting | ESLint + Prettier |
+| Area                 | Technology                                                                                    |
+| -------------------- | --------------------------------------------------------------------------------------------- |
+| Framework            | [TanStack Start](https://tanstack.com/start) (React 19, SSR)                                  |
+| Routing & data       | [TanStack Router](https://tanstack.com/router) + [TanStack Query](https://tanstack.com/query) |
+| 3D rendering         | [Three.js](https://threejs.org/)                                                              |
+| Database             | PostgreSQL with [PostGIS](https://postgis.net/) for spatial data                              |
+| ORM                  | [Prisma](https://www.prisma.io/)                                                              |
+| Auth                 | [Better Auth](https://www.better-auth.com/)                                                   |
+| UI                   | [shadcn/ui](https://ui.shadcn.com/) + [Tailwind CSS v4](https://tailwindcss.com/)             |
+| Validation           | [Zod](https://zod.dev/)                                                                       |
+| Testing              | [Vitest](https://vitest.dev/) + [Testing Library](https://testing-library.com/)               |
+| Linting & formatting | ESLint + Prettier                                                                             |
 
 ## Requirements
 
@@ -66,17 +66,17 @@ Run `pnpm db:migrate` when you've made schema changes that need to be applied to
 
 Other useful commands:
 
-| Command | Description |
-|---|---|
-| `pnpm db:studio` | Open Prisma Studio |
-| `pnpm db:push` | Push schema changes without a migration |
-| `pnpm db:seed` | Seed the database |
+| Command          | Description                             |
+| ---------------- | --------------------------------------- |
+| `pnpm db:studio` | Open Prisma Studio                      |
+| `pnpm db:push`   | Push schema changes without a migration |
+| `pnpm db:seed`   | Seed the database                       |
 
 ## Other scripts
 
-| Command | Description |
-|---|---|
-| `pnpm build` | Production build |
+| Command        | Description              |
+| -------------- | ------------------------ |
+| `pnpm build`   | Production build         |
 | `pnpm preview` | Preview production build |
-| `pnpm test` | Run tests |
-| `pnpm check` | Format and lint |
+| `pnpm test`    | Run tests                |
+| `pnpm check`   | Format and lint          |
