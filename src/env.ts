@@ -9,6 +9,8 @@ export const env = createEnv({
     POSTGRES_DB: z.string().min(1),
     POSTGRES_PASSWORD: z.string().min(1),
     POSTGRES_PORT: z.coerce.number().int().positive(),
+    BETTER_AUTH_SECRET: z.string().min(1),
+    ADMIN_PASSWORD: z.string().min(1),
   },
 
   /**
