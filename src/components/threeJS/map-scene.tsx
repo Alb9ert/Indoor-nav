@@ -5,10 +5,8 @@ import * as THREE from "three"
 import { getFloorPlansData } from "#/server/floorplan.functions"
 
 interface FloorPlan {
-  id: number
   floor: number
-  imageUrl: string
-  aspectRatio: number
+  path: string
   calibrationScale: number
 }
 
@@ -72,13 +70,13 @@ export const ThreeScene = ({ currentFloor = null }: ThreeSceneProps) => {
         : floorPlansData
 
     floorsToLoad.forEach((floorPlan: FloorPlan) => {
-      textureLoader.load(floorPlan.imageUrl, (texture) => {
+      textureLoader.load(floorPlan.path, (texture) => {
         // texture filtering
         texture.minFilter = THREE.LinearFilter
         texture.magFilter = THREE.LinearFilter
 
         const height = BASE_HEIGHT * floorPlan.calibrationScale
-        const width = height * floorPlan.aspectRatio
+        const width = height * (texture.image.width / texture.image.height)
 
         const geometry = new THREE.PlaneGeometry(width, height)
         const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })

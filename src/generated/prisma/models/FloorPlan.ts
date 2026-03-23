@@ -27,44 +27,34 @@ export type AggregateFloorPlan = {
 }
 
 export type FloorPlanAvgAggregateOutputType = {
-  id: number | null
   floor: number | null
-  aspectRatio: number | null
   calibrationScale: number | null
 }
 
 export type FloorPlanSumAggregateOutputType = {
-  id: number | null
   floor: number | null
-  aspectRatio: number | null
   calibrationScale: number | null
 }
 
 export type FloorPlanMinAggregateOutputType = {
-  id: number | null
   floor: number | null
-  imageUrl: string | null
-  aspectRatio: number | null
+  path: string | null
   calibrationScale: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
 
 export type FloorPlanMaxAggregateOutputType = {
-  id: number | null
   floor: number | null
-  imageUrl: string | null
-  aspectRatio: number | null
+  path: string | null
   calibrationScale: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
 
 export type FloorPlanCountAggregateOutputType = {
-  id: number
   floor: number
-  imageUrl: number
-  aspectRatio: number
+  path: number
   calibrationScale: number
   createdAt: number
   updatedAt: number
@@ -73,44 +63,34 @@ export type FloorPlanCountAggregateOutputType = {
 
 
 export type FloorPlanAvgAggregateInputType = {
-  id?: true
   floor?: true
-  aspectRatio?: true
   calibrationScale?: true
 }
 
 export type FloorPlanSumAggregateInputType = {
-  id?: true
   floor?: true
-  aspectRatio?: true
   calibrationScale?: true
 }
 
 export type FloorPlanMinAggregateInputType = {
-  id?: true
   floor?: true
-  imageUrl?: true
-  aspectRatio?: true
+  path?: true
   calibrationScale?: true
   createdAt?: true
   updatedAt?: true
 }
 
 export type FloorPlanMaxAggregateInputType = {
-  id?: true
   floor?: true
-  imageUrl?: true
-  aspectRatio?: true
+  path?: true
   calibrationScale?: true
   createdAt?: true
   updatedAt?: true
 }
 
 export type FloorPlanCountAggregateInputType = {
-  id?: true
   floor?: true
-  imageUrl?: true
-  aspectRatio?: true
+  path?: true
   calibrationScale?: true
   createdAt?: true
   updatedAt?: true
@@ -204,10 +184,8 @@ export type FloorPlanGroupByArgs<ExtArgs extends runtime.Types.Extensions.Intern
 }
 
 export type FloorPlanGroupByOutputType = {
-  id: number
   floor: number
-  imageUrl: string
-  aspectRatio: number
+  path: string
   calibrationScale: number
   createdAt: Date
   updatedAt: Date
@@ -237,43 +215,35 @@ export type FloorPlanWhereInput = {
   AND?: Prisma.FloorPlanWhereInput | Prisma.FloorPlanWhereInput[]
   OR?: Prisma.FloorPlanWhereInput[]
   NOT?: Prisma.FloorPlanWhereInput | Prisma.FloorPlanWhereInput[]
-  id?: Prisma.IntFilter<"FloorPlan"> | number
   floor?: Prisma.IntFilter<"FloorPlan"> | number
-  imageUrl?: Prisma.StringFilter<"FloorPlan"> | string
-  aspectRatio?: Prisma.FloatFilter<"FloorPlan"> | number
+  path?: Prisma.StringFilter<"FloorPlan"> | string
   calibrationScale?: Prisma.FloatFilter<"FloorPlan"> | number
   createdAt?: Prisma.DateTimeFilter<"FloorPlan"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"FloorPlan"> | Date | string
 }
 
 export type FloorPlanOrderByWithRelationInput = {
-  id?: Prisma.SortOrder
   floor?: Prisma.SortOrder
-  imageUrl?: Prisma.SortOrder
-  aspectRatio?: Prisma.SortOrder
+  path?: Prisma.SortOrder
   calibrationScale?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type FloorPlanWhereUniqueInput = Prisma.AtLeast<{
-  id?: number
   floor?: number
   AND?: Prisma.FloorPlanWhereInput | Prisma.FloorPlanWhereInput[]
   OR?: Prisma.FloorPlanWhereInput[]
   NOT?: Prisma.FloorPlanWhereInput | Prisma.FloorPlanWhereInput[]
-  imageUrl?: Prisma.StringFilter<"FloorPlan"> | string
-  aspectRatio?: Prisma.FloatFilter<"FloorPlan"> | number
+  path?: Prisma.StringFilter<"FloorPlan"> | string
   calibrationScale?: Prisma.FloatFilter<"FloorPlan"> | number
   createdAt?: Prisma.DateTimeFilter<"FloorPlan"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"FloorPlan"> | Date | string
-}, "id" | "floor">
+}, "floor" | "floor">
 
 export type FloorPlanOrderByWithAggregationInput = {
-  id?: Prisma.SortOrder
   floor?: Prisma.SortOrder
-  imageUrl?: Prisma.SortOrder
-  aspectRatio?: Prisma.SortOrder
+  path?: Prisma.SortOrder
   calibrationScale?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -288,10 +258,8 @@ export type FloorPlanScalarWhereWithAggregatesInput = {
   AND?: Prisma.FloorPlanScalarWhereWithAggregatesInput | Prisma.FloorPlanScalarWhereWithAggregatesInput[]
   OR?: Prisma.FloorPlanScalarWhereWithAggregatesInput[]
   NOT?: Prisma.FloorPlanScalarWhereWithAggregatesInput | Prisma.FloorPlanScalarWhereWithAggregatesInput[]
-  id?: Prisma.IntWithAggregatesFilter<"FloorPlan"> | number
   floor?: Prisma.IntWithAggregatesFilter<"FloorPlan"> | number
-  imageUrl?: Prisma.StringWithAggregatesFilter<"FloorPlan"> | string
-  aspectRatio?: Prisma.FloatWithAggregatesFilter<"FloorPlan"> | number
+  path?: Prisma.StringWithAggregatesFilter<"FloorPlan"> | string
   calibrationScale?: Prisma.FloatWithAggregatesFilter<"FloorPlan"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"FloorPlan"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"FloorPlan"> | Date | string
@@ -299,18 +267,15 @@ export type FloorPlanScalarWhereWithAggregatesInput = {
 
 export type FloorPlanCreateInput = {
   floor: number
-  imageUrl: string
-  aspectRatio: number
+  path: string
   calibrationScale?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
 
 export type FloorPlanUncheckedCreateInput = {
-  id?: number
   floor: number
-  imageUrl: string
-  aspectRatio: number
+  path: string
   calibrationScale?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -318,28 +283,23 @@ export type FloorPlanUncheckedCreateInput = {
 
 export type FloorPlanUpdateInput = {
   floor?: Prisma.IntFieldUpdateOperationsInput | number
-  imageUrl?: Prisma.StringFieldUpdateOperationsInput | string
-  aspectRatio?: Prisma.FloatFieldUpdateOperationsInput | number
+  path?: Prisma.StringFieldUpdateOperationsInput | string
   calibrationScale?: Prisma.FloatFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type FloorPlanUncheckedUpdateInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
   floor?: Prisma.IntFieldUpdateOperationsInput | number
-  imageUrl?: Prisma.StringFieldUpdateOperationsInput | string
-  aspectRatio?: Prisma.FloatFieldUpdateOperationsInput | number
+  path?: Prisma.StringFieldUpdateOperationsInput | string
   calibrationScale?: Prisma.FloatFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type FloorPlanCreateManyInput = {
-  id?: number
   floor: number
-  imageUrl: string
-  aspectRatio: number
+  path: string
   calibrationScale?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -347,64 +307,51 @@ export type FloorPlanCreateManyInput = {
 
 export type FloorPlanUpdateManyMutationInput = {
   floor?: Prisma.IntFieldUpdateOperationsInput | number
-  imageUrl?: Prisma.StringFieldUpdateOperationsInput | string
-  aspectRatio?: Prisma.FloatFieldUpdateOperationsInput | number
+  path?: Prisma.StringFieldUpdateOperationsInput | string
   calibrationScale?: Prisma.FloatFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type FloorPlanUncheckedUpdateManyInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
   floor?: Prisma.IntFieldUpdateOperationsInput | number
-  imageUrl?: Prisma.StringFieldUpdateOperationsInput | string
-  aspectRatio?: Prisma.FloatFieldUpdateOperationsInput | number
+  path?: Prisma.StringFieldUpdateOperationsInput | string
   calibrationScale?: Prisma.FloatFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type FloorPlanCountOrderByAggregateInput = {
-  id?: Prisma.SortOrder
   floor?: Prisma.SortOrder
-  imageUrl?: Prisma.SortOrder
-  aspectRatio?: Prisma.SortOrder
+  path?: Prisma.SortOrder
   calibrationScale?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type FloorPlanAvgOrderByAggregateInput = {
-  id?: Prisma.SortOrder
   floor?: Prisma.SortOrder
-  aspectRatio?: Prisma.SortOrder
   calibrationScale?: Prisma.SortOrder
 }
 
 export type FloorPlanMaxOrderByAggregateInput = {
-  id?: Prisma.SortOrder
   floor?: Prisma.SortOrder
-  imageUrl?: Prisma.SortOrder
-  aspectRatio?: Prisma.SortOrder
+  path?: Prisma.SortOrder
   calibrationScale?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type FloorPlanMinOrderByAggregateInput = {
-  id?: Prisma.SortOrder
   floor?: Prisma.SortOrder
-  imageUrl?: Prisma.SortOrder
-  aspectRatio?: Prisma.SortOrder
+  path?: Prisma.SortOrder
   calibrationScale?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
 export type FloorPlanSumOrderByAggregateInput = {
-  id?: Prisma.SortOrder
   floor?: Prisma.SortOrder
-  aspectRatio?: Prisma.SortOrder
   calibrationScale?: Prisma.SortOrder
 }
 
@@ -419,55 +366,45 @@ export type FloatFieldUpdateOperationsInput = {
 
 
 export type FloorPlanSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
-  id?: boolean
   floor?: boolean
-  imageUrl?: boolean
-  aspectRatio?: boolean
+  path?: boolean
   calibrationScale?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["floorPlan"]>
 
 export type FloorPlanSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
-  id?: boolean
   floor?: boolean
-  imageUrl?: boolean
-  aspectRatio?: boolean
+  path?: boolean
   calibrationScale?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["floorPlan"]>
 
 export type FloorPlanSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
-  id?: boolean
   floor?: boolean
-  imageUrl?: boolean
-  aspectRatio?: boolean
+  path?: boolean
   calibrationScale?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["floorPlan"]>
 
 export type FloorPlanSelectScalar = {
-  id?: boolean
   floor?: boolean
-  imageUrl?: boolean
-  aspectRatio?: boolean
+  path?: boolean
   calibrationScale?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type FloorPlanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "floor" | "imageUrl" | "aspectRatio" | "calibrationScale" | "createdAt" | "updatedAt", ExtArgs["result"]["floorPlan"]>
+export type FloorPlanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"floor" | "path" | "calibrationScale" | "createdAt" | "updatedAt", ExtArgs["result"]["floorPlan"]>
 
 export type $FloorPlanPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "FloorPlan"
   objects: {}
   scalars: runtime.Types.Extensions.GetPayloadResult<{
-    id: number
     floor: number
-    imageUrl: string
-    aspectRatio: number
+    path: string
     calibrationScale: number
     createdAt: Date
     updatedAt: Date
@@ -554,8 +491,8 @@ export interface FloorPlanDelegate<ExtArgs extends runtime.Types.Extensions.Inte
    * // Get first 10 FloorPlans
    * const floorPlans = await prisma.floorPlan.findMany({ take: 10 })
    * 
-   * // Only select the `id`
-   * const floorPlanWithIdOnly = await prisma.floorPlan.findMany({ select: { id: true } })
+   * // Only select the `floor`
+   * const floorPlanWithFloorOnly = await prisma.floorPlan.findMany({ select: { floor: true } })
    * 
    */
   findMany<T extends FloorPlanFindManyArgs>(args?: Prisma.SelectSubset<T, FloorPlanFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FloorPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
@@ -599,9 +536,9 @@ export interface FloorPlanDelegate<ExtArgs extends runtime.Types.Extensions.Inte
    *   ]
    * })
    * 
-   * // Create many FloorPlans and only return the `id`
-   * const floorPlanWithIdOnly = await prisma.floorPlan.createManyAndReturn({
-   *   select: { id: true },
+   * // Create many FloorPlans and only return the `floor`
+   * const floorPlanWithFloorOnly = await prisma.floorPlan.createManyAndReturn({
+   *   select: { floor: true },
    *   data: [
    *     // ... provide data here
    *   ]
@@ -690,9 +627,9 @@ export interface FloorPlanDelegate<ExtArgs extends runtime.Types.Extensions.Inte
    *   ]
    * })
    * 
-   * // Update zero or more FloorPlans and only return the `id`
-   * const floorPlanWithIdOnly = await prisma.floorPlan.updateManyAndReturn({
-   *   select: { id: true },
+   * // Update zero or more FloorPlans and only return the `floor`
+   * const floorPlanWithFloorOnly = await prisma.floorPlan.updateManyAndReturn({
+   *   select: { floor: true },
    *   where: {
    *     // ... provide filter here
    *   },
@@ -894,10 +831,8 @@ export interface Prisma__FloorPlanClient<T, Null = never, ExtArgs extends runtim
  * Fields of the FloorPlan model
  */
 export interface FloorPlanFieldRefs {
-  readonly id: Prisma.FieldRef<"FloorPlan", 'Int'>
   readonly floor: Prisma.FieldRef<"FloorPlan", 'Int'>
-  readonly imageUrl: Prisma.FieldRef<"FloorPlan", 'String'>
-  readonly aspectRatio: Prisma.FieldRef<"FloorPlan", 'Float'>
+  readonly path: Prisma.FieldRef<"FloorPlan", 'String'>
   readonly calibrationScale: Prisma.FieldRef<"FloorPlan", 'Float'>
   readonly createdAt: Prisma.FieldRef<"FloorPlan", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"FloorPlan", 'DateTime'>

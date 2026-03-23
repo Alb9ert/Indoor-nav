@@ -164,10 +164,8 @@ enum RoomType {
 }
 
 model FloorPlan {
-  id                   Int     @id @default(autoincrement())
-  floor                Int     @unique
-  imageUrl             String
-  aspectRatio          Float
+  floor                Int     @id @unique
+  path                 String
   calibrationScale     Float   @default(1.0)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
