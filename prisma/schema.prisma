@@ -73,3 +73,92 @@ model Verification {
 
   @@map("verification")
 }
+
+model Section {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rooms     Room[]
+}
+
+model Room {
+  id            String    @id
+  isActivated   Boolean   @default(true)
+  semanticNames String[]
+  type          RoomType
+
+  /// PostGIS geometry columns
+  pointZ        Unsupported("geometry(PointZ, 4326)")?
+  polygon       Unsupported("geometry(Polygon, 4326)")?
+  multiPolygon  Unsupported("geometry(MultiPolygon, 4326)")?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sectionId     String?
+  section       Section?  @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+
+  /// A room can have many nodes.
+  /// A node may optionally belong to a room.
+  nodes         Node[]
+
+  @@index([sectionId])
+  @@index([type])
+  @@index([isActivated])
+}
+
+model Node {
+  id            String    @id @default(cuid())
+  x             Float
+  y             Float
+  z             Float
+  type          NodeType
+  isActivated   Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  roomId        String?
+  room          Room?     @relation(fields: [roomId], references: [id], onDelete: SetNull)
+
+  edgesFrom     Edge[]    @relation("EdgeFromNode")
+  edgesTo       Edge[]    @relation("EdgeToNode")
+
+  @@index([roomId])
+  @@index([type])
+  @@index([isActivated])
+  @@index([x, y, z])
+}
+
+model Edge {
+  id          String   @id @default(cuid())
+  distance    Float
+  doors       Boolean  @default(false)
+  stairs      Boolean  @default(false)
+  elevators   Boolean  @default(false)
+  isActivated Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  /// Undirected edge stored as two node references.
+  /// Normalize ordering in backend logic before insert.
+  fromNodeId  String
+  toNodeId    String
+
+  fromNode    Node     @relation("EdgeFromNode", fields: [fromNodeId], references: [id], onDelete: Cascade)
+  toNode      Node     @relation("EdgeToNode", fields: [toNodeId], references: [id], onDelete: Cascade)
+
+  @@unique([fromNodeId, toNodeId])
+  @@index([fromNodeId])
+  @@index([toNodeId])
+  @@index([isActivated])
+}
+
+enum NodeType {
+  DEFAULT
+}
+
+enum RoomType {
+  DEFAULT
+}
