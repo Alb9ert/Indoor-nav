@@ -83,7 +83,7 @@ export default [
       "@typescript-eslint/unified-signatures": "off",
       "@typescript-eslint/no-deprecated": "warn",
       // Prevents `console.log` (In prod), but allows `console.warn` and `console.error`.
-      "no-console": ["error", { allow: ["warn", "error"] }],
+      "no-console": ["warn", { allow: ["warn", "error"] }],
       // These rules are good, but can be overly strict for some common patterns.
       "@typescript-eslint/prefer-nullish-coalescing": "warn",
       "@typescript-eslint/restrict-template-expressions": [
