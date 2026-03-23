@@ -111,9 +111,9 @@ model Room {
 
 model Node {
   id            String    @id @default(cuid())
-  x             Int
-  y             Int
-  z             Int
+  x             Float
+  y             Float
+  z             Float
   type          NodeType
   isActivated   Boolean   @default(true)
   createdAt     DateTime  @default(now())
