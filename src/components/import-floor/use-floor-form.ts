@@ -75,7 +75,12 @@ export const useFloorUpload = () => {
           const result = await getFloorImage({ data: { floor } })
           setOverwrite({ show: true, existingImage: result.filepath })
           return
-        } catch {
+        } catch (err) {
+          const message = err instanceof Error ? err.message : ""
+          if (message.includes("Floor image not found")) {
+            await doUpload(file, floor)
+            return
+          }
           setUploadStatus({
             state: "error",
             message: "Failed to check existing floor plan. Please try again.",
