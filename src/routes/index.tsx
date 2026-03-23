@@ -11,7 +11,7 @@ const App = () => {
 
   return (
     <main className="page-wrap px-4 pb-8 pt-8">
-      <div className="flex justify-center items-cente">
+      <div className="flex justify-center">
         {!isPending &&
           (isLoggedIn ? (
             <Button
