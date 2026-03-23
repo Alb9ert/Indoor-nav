@@ -9,7 +9,7 @@ import { saveImageToServer } from "./import-floor.server"
 const uploadImageSchema = z.object({
   base64: z.string().min(1),
   filename: z.string().min(1),
-  floor: z.string().min(1),
+  floor: z.string().min(1).max(20),
 })
 
 const getFloorImageSchema = z.object({
@@ -25,7 +25,7 @@ export const uploadImage = createServerFn({ method: "POST" })
 export const getFloorImage = createServerFn({ method: "GET" })
   .inputValidator(getFloorImageSchema)
   .handler(async ({ data }) => {
-    const uploadDir = path.join(process.cwd(), "public", "uploads")
+    const uploadDir = path.join(process.cwd(), "public", "floorplans")
 
     let files: string[]
     try {
@@ -39,5 +39,5 @@ export const getFloorImage = createServerFn({ method: "GET" })
       throw new Error(`Floor image not found for floor: ${data.floor}`)
     }
 
-    return { filepath: `/uploads/${existing}` }
+    return { filepath: `/floorplans/${existing}` }
   })

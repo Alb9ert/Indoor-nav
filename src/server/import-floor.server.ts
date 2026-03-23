@@ -1,17 +1,16 @@
 import fs from "fs/promises"
 import path from "path"
+import { prisma } from "#/db"
 
 export const saveImageToServer = async (
   base64: string,
   filename: string,
   floor: string,
 ): Promise<{ filepath: string }> => {
-  const uploadDir = path.join(process.cwd(), "public", "uploads")
+  const uploadDir = path.join(process.cwd(), "public", "floorplans")
 
-  // Create upload dir of none exists
   await fs.mkdir(uploadDir, { recursive: true })
 
-  // Delete any existing image for this floor
   const existingFiles = await fs.readdir(uploadDir)
   const floorPrefix = `floor_${floor}_`
   for (const file of existingFiles) {
@@ -20,15 +19,19 @@ export const saveImageToServer = async (
     }
   }
 
-  // Strip the data URL prefix (e.g. "data:image/png;base64,")
   const base64Data = base64.replace(/^data:image\/\w+;base64,/, "")
   const buffer = Buffer.from(base64Data, "base64")
-
   const nameWithFloor = `${floorPrefix}${filename}`
   const filepath = path.join(uploadDir, nameWithFloor)
-
   await fs.writeFile(filepath, buffer)
 
-  // Return the public-facing path
-  return { filepath: `/uploads/${nameWithFloor}` }
+  const publicPath = `/floorplans/${nameWithFloor}`
+
+  await prisma.floorPlan.upsert({
+    where: { floor: parseInt(floor) },
+    update: { path: publicPath },
+    create: { floor: parseInt(floor), path: publicPath },
+  })
+
+  return { filepath: publicPath }
 }
