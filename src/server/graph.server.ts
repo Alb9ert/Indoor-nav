@@ -153,10 +153,10 @@ export class Graph {
 // Functions for in memory singleton graph
 // ----------------------------- //
 export const initGraph = async () => {
+  if (graph) return graph
+
   const nodes = await prisma.node.findMany()
   const edges = await prisma.edge.findMany()
-
-  if (graph) return graph
 
   graph = new Graph(nodes, edges)
 
@@ -164,9 +164,10 @@ export const initGraph = async () => {
 }
 
 // After init
-export const getGraph = () => {
+export const getGraph = async (): Promise<Graph> => {
   if (!graph) {
-    throw new Error("Graph not initialized")
+    graph = await initGraph()
+    console.log("Graph object did not exist in memory. Initialising...")
   }
   return graph
 }
@@ -181,7 +182,8 @@ export const addNodeInDb = async (node: NodeCreateInput) => {
     data: node,
   })
 
-  getGraph().addNode(created)
+  const g = await getGraph()
+  g.addNode(created)
 
   return created
 }
@@ -191,7 +193,8 @@ export const deleteNodeByIdInDb = async (nodeId: Node["id"]) => {
     where: { id: nodeId },
   })
 
-  getGraph().deleteNodeById(nodeId)
+  const g = await getGraph()
+  g.deleteNodeById(nodeId)
 
   return deleted
 }
@@ -202,7 +205,8 @@ export const addEdge = async (edge: EdgeCreateInput) => {
     data: edge,
   })
 
-  getGraph().addEdge(created)
+  const g = await getGraph()
+  g.addEdge(created)
 
   return created
 }
@@ -212,7 +216,8 @@ export const deleteEdgeByIdInDb = async (edgeId: Edge["id"]) => {
     where: { id: edgeId },
   })
 
-  getGraph().deleteEdgeByNodeIds(deleted.fromNodeId, deleted.toNodeId)
+  const g = await getGraph()
+  g.deleteEdgeByNodeIds(deleted.fromNodeId, deleted.toNodeId)
 
   return deleted
 }
@@ -223,7 +228,8 @@ export const deactivateEdgeByIdinDb = async (edgeId: Edge["id"]) => {
     data: { isActivated: false },
   })
 
-  getGraph().deactiveEdgeByNodeIds(updated.fromNodeId, updated.toNodeId)
+  const g = await getGraph()
+  g.deactiveEdgeByNodeIds(updated.fromNodeId, updated.toNodeId)
 
   return updated
 }
@@ -234,7 +240,8 @@ export const activateEdgeByIdInDb = async (edgeId: Edge["id"]) => {
     data: { isActivated: true },
   })
 
-  getGraph().activateEdgeByNodeIds(updated.fromNodeId, updated.toNodeId)
+  const g = await getGraph()
+  g.activateEdgeByNodeIds(updated.fromNodeId, updated.toNodeId)
 
   return updated
 }

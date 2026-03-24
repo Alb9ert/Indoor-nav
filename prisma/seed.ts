@@ -14,6 +14,8 @@ async function main() {
 
   // Clear existing data
   await prisma.floorPlan.deleteMany()
+  await prisma.node.deleteMany()
+  await prisma.edge.deleteMany()
 
   // Create example floor plans
   const floorPlans = await prisma.floorPlan.createMany({
@@ -34,20 +36,16 @@ async function main() {
   console.log(`Created ${floorPlans.count} floor plans`)
 
   // Create example nodes (this should be deleted later!!!)
-  const nodes = await Promise.all([
-    prisma.node.create({
-      data: { x: 0, y: 0, z: 0, type: "DEFAULT" },
-    }),
-    prisma.node.create({
-      data: { x: 5, y: 0, z: 0, type: "DEFAULT" },
-    }),
-    prisma.node.create({
-      data: { x: 5, y: 5, z: 0, type: "DEFAULT" },
-    }),
-    prisma.node.create({
-      data: { x: 0, y: 5, z: 0, type: "DEFAULT" },
-    }),
-  ])
+  await prisma.node.createMany({
+    data: [
+      { x: 0, y: 0, z: 0, type: "DEFAULT" },
+      { x: 5, y: 0, z: 0, type: "DEFAULT" },
+      { x: 5, y: 5, z: 0, type: "DEFAULT" },
+      { x: 0, y: 5, z: 0, type: "DEFAULT" },
+    ],
+  })
+
+  const nodes = await prisma.node.findMany()
 
   console.log("Nodes created:", nodes.length)
 
