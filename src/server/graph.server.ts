@@ -1,4 +1,5 @@
 import { prisma } from "#/db"
+
 import type { Node, Edge } from "#/generated/prisma/client"
 import type { EdgeCreateInput, NodeCreateInput } from "#/generated/prisma/models"
 

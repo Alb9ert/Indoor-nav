@@ -1,13 +1,9 @@
 import handler, { createServerEntry } from "@tanstack/react-start/server-entry"
+
 import { initGraph } from "./server/graph.server"
 
-const graphSucceed = await initGraph()
-console.log("Graph instance initilized")
-
-if (!graphSucceed) {
-  console.error("Graph failed to init")
-  process.exit(1)
-}
+await initGraph()
+console.log("Graph instance initialized")
 
 export default createServerEntry({
   async fetch(request) {
