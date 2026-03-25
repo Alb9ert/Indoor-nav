@@ -77,7 +77,7 @@ export const useFloorUpload = () => {
           return
         } catch (err) {
           const message = err instanceof Error ? err.message : ""
-          if (message.includes("Floor image not found")) {
+          if (message.includes("Floor image not found") || message.includes("not found")) {
             await doUpload(file, floor)
             return
           }
@@ -134,7 +134,15 @@ export const useFloorUpload = () => {
   }
 
   const handleFloorChange = (value: string | null) => {
-    if (!value) return
+    if (value === null) return
+    if (Number(value) > 20) {
+      setUploadStatus({ state: "error", message: "Floor must be 20 or less" })
+      return
+    }
+    if (isNaN(Number(value))) {
+      setUploadStatus({ state: "error", message: "Floor must be a number" })
+      return
+    }
     form.setFieldValue("floor", value)
     setUploadStatus({ state: "idle" })
     setOverwrite({ show: false, existingImage: null })
