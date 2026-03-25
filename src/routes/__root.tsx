@@ -53,17 +53,13 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "AAU CPH Nav",
+        title: "TanStack Start Starter",
       },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
-      },
-      {
-        rel: "icon",
-        href: "/logo.png",
       },
     ],
   }),
