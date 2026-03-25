@@ -14,6 +14,8 @@ async function main() {
 
   // Clear existing data
   await prisma.floorPlan.deleteMany()
+  await prisma.node.deleteMany()
+  await prisma.edge.deleteMany()
 
   // Create example floor plans
   const floorPlans = await prisma.floorPlan.createMany({
@@ -32,6 +34,59 @@ async function main() {
   })
 
   console.log(`Created ${floorPlans.count} floor plans`)
+
+  // Create example nodes (this should be deleted later!!!)
+  await prisma.node.createMany({
+    data: [
+      { x: 0, y: 0, z: 0, type: "DEFAULT" },
+      { x: 5, y: 0, z: 0, type: "DEFAULT" },
+      { x: 5, y: 5, z: 0, type: "DEFAULT" },
+      { x: 0, y: 5, z: 0, type: "DEFAULT" },
+    ],
+  })
+
+  const nodes = await prisma.node.findMany()
+
+  console.log("Nodes created:", nodes.length)
+
+  // Seed edges (SHOULD BE DELETED LATER!)
+  const edges = await prisma.edge.createMany({
+    data: [
+      // A → B
+      {
+        fromNodeId: nodes[0].id,
+        toNodeId: nodes[1].id,
+        distance: 5,
+        doors: true,
+      },
+
+      // B → C
+      {
+        fromNodeId: nodes[1].id,
+        toNodeId: nodes[2].id,
+        distance: 5,
+        stairs: true,
+      },
+
+      // C → D
+      {
+        fromNodeId: nodes[2].id,
+        toNodeId: nodes[3].id,
+        distance: 5,
+        elevators: true,
+      },
+
+      // D → A
+      {
+        fromNodeId: nodes[3].id,
+        toNodeId: nodes[0].id,
+        distance: 5,
+        doors: true,
+      },
+    ],
+  })
+
+  console.log("Edges created ", edges.count)
 }
 
 main()
