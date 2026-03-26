@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router"
-import { getFloorPlansData } from "#/server/floorplan.functions"
 import { useQuery } from "@tanstack/react-query"
-import type { FloorPlan } from "#/components/threeJS/map-scene"
+import { createFileRoute } from "@tanstack/react-router"
 import { useState, useRef } from "react"
+
+import { CalibrateFloorForm } from "#/components/forms/calibrate-floor-form"
+import { Button } from "#/components/ui/button"
 import {
   Select,
   SelectContent,
@@ -10,16 +11,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "#/components/ui/select"
-import { Button } from "#/components/ui/button"
-import { CalibrateFloorForm } from "#/components/forms/calibrate-floor-form"
+import { getFloorPlansData } from "#/server/floorplan.functions"
 
-export const Route = createFileRoute("/calibrate-floor")({
-  component: CalibrateFloor,
-})
+import type { FloorPlan } from "#/components/threeJS/map-scene"
 
-export function CalibrateFloor() {
+interface TwoPoints {
+  x: number
+  y: number
+  rx: number
+  ry: number
+}
+
+export const CalibrateFloor = () => {
   const [selectedFloor, setSelectedFloor] = useState<number | null>(null)
-  const [points, setPoints] = useState<{ x: number; y: number }[]>([])
+  const [points, setPoints] = useState<TwoPoints[]>([])
   const containerRef = useRef<HTMLDivElement>(null)
 
   const { data: floorPlansData } = useQuery({
@@ -36,37 +41,30 @@ export function CalibrateFloor() {
       ? Math.sqrt((points[1].x - points[0].x) ** 2 + (points[1].y - points[0].y) ** 2)
       : 0
 
-  // Convert image coordinates (natural pixels) to rendered screen coordinates
-  const getRenderedCoords = (x: number, y: number) => {
-    const img = containerRef.current?.querySelector("img") as HTMLImageElement
-    if (!img) return { x: 0, y: 0 }
-    const rect = img.getBoundingClientRect()
-    return { x: x * (rect.width / img.naturalWidth), y: y * (rect.height / img.naturalHeight) }
-  }
-
   // Handle clicks on the floor plan image
   const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (points.length >= 2) {
       setPoints([])
       return
     }
-    const img = containerRef.current?.querySelector("img") as HTMLImageElement
+    const img = containerRef.current?.querySelector("img")
     if (!img) return
     const rect = img.getBoundingClientRect()
 
-    // Convert click position to image pixel coordinates
     setPoints((prev) => [
       ...prev,
       {
         x: ((e.clientX - rect.left) / rect.width) * img.naturalWidth,
         y: ((e.clientY - rect.top) / rect.height) * img.naturalHeight,
+        rx: e.clientX - rect.left,
+        ry: e.clientY - rect.top,
       },
     ])
   }
 
-  // Rendered coordinates for the first and second points
-  const p1r = points.length === 2 ? getRenderedCoords(points[0].x, points[0].y) : null
-  const p2r = points.length === 2 ? getRenderedCoords(points[1].x, points[1].y) : null
+  // Rendered coordinates for the first and second points (stored at click time)
+  const p1r = points.length === 2 ? { x: points[0].rx, y: points[0].ry } : null
+  const p2r = points.length === 2 ? { x: points[1].rx, y: points[1].ry } : null
 
   // Midpoint between the two points (used to position the form)
   const midR = p1r && p2r ? { x: (p1r.x + p2r.x) / 2, y: (p1r.y + p2r.y) / 2 } : null
@@ -74,7 +72,13 @@ export function CalibrateFloor() {
   return (
     <>
       <div className="ml-2 mt-2">
-        <Button onClick={() => window.history.back()}>← Back</Button>
+        <Button
+          onClick={() => {
+            window.history.back()
+          }}
+        >
+          ← Back
+        </Button>
       </div>
 
       <div className="pb-20 px-3 flex flex-col items-center gap-y-2">
@@ -83,7 +87,7 @@ export function CalibrateFloor() {
 
         {selectedFloorPlan && (
           <p className="text-xs text-muted-foreground">
-            Current scale: {selectedFloorPlan.calibrationScale ?? "not set"} m/px
+            Current scale: {selectedFloorPlan.calibrationScale} m/px
           </p>
         )}
 
@@ -117,24 +121,21 @@ export function CalibrateFloor() {
             <img src={selectedFloorPlan.path} alt="Floor plan" className="border max-w-full" />
 
             {/* Render points as red dots */}
-            {points.map((p, i) => {
-              const { x, y } = getRenderedCoords(p.x, p.y)
-              return (
-                <div
-                  key={i}
-                  style={{
-                    position: "absolute",
-                    left: x,
-                    top: y,
-                    width: 10,
-                    height: 10,
-                    background: "red",
-                    borderRadius: "50%",
-                    transform: "translate(-50%, -50%)",
-                  }}
-                />
-              )
-            })}
+            {points.map((p, i) => (
+              <div
+                key={i}
+                style={{
+                  position: "absolute",
+                  left: p.rx,
+                  top: p.ry,
+                  width: 10,
+                  height: 10,
+                  background: "red",
+                  borderRadius: "50%",
+                  transform: "translate(-50%, -50%)",
+                }}
+              />
+            ))}
 
             {/* Draw line between points if two points are selected */}
             {p1r && p2r && (
@@ -157,7 +158,9 @@ export function CalibrateFloor() {
                 floor={selectedFloor}
                 pixelDistance={pixelDistance}
                 position={midR}
-                onReset={setPoints}
+                onReset={() => {
+                  setPoints([])
+                }}
               />
             )}
           </div>
@@ -166,3 +169,7 @@ export function CalibrateFloor() {
     </>
   )
 }
+
+export const Route = createFileRoute("/calibrate-floor")({
+  component: CalibrateFloor,
+})

@@ -1,19 +1,20 @@
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { z } from "zod"
-import { editFloorPlanData } from "#/server/floorplan.functions"
+
 import { Button } from "#/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card"
 import { Input } from "#/components/ui/input"
+import { editFloorPlanData } from "#/server/floorplan.functions"
 
 interface Props {
   floor: number
   pixelDistance: number
   position: { x: number; y: number }
-  onReset: React.Dispatch<React.SetStateAction<{ x: number; y: number }[]>>
+  onReset: () => void
 }
 
-export function CalibrateFloorForm({ floor, pixelDistance, position, onReset }: Props) {
+export const CalibrateFloorForm = ({ floor, pixelDistance, position, onReset }: Props) => {
   const queryClient = useQueryClient()
 
   const mutation = useMutation({
@@ -33,9 +34,11 @@ export function CalibrateFloorForm({ floor, pixelDistance, position, onReset }: 
     <form
       onSubmit={(e) => {
         e.preventDefault()
-        form.handleSubmit()
+        void form.handleSubmit()
       }}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation()
+      }}
       style={{
         position: "absolute",
         left: position.x,
@@ -105,7 +108,14 @@ export function CalibrateFloorForm({ floor, pixelDistance, position, onReset }: 
             )}
           </form.Subscribe>
 
-          <Button type="button" variant="outline" size="sm" onClick={() => onReset([])}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              onReset()
+            }}
+          >
             Close
           </Button>
         </CardContent>
