@@ -2,8 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { Building2, Coffee, GraduationCap, Train } from "lucide-react"
 
 import { FloorSelector } from "#/components/floor-selector"
-import { RenderModeToggle } from "#/components/render-mode-toggle.tsx"
-import { ThreeScene } from "#/components/threeJS/map-scene"
+import { RenderModeToggle } from "#/components/render-mode-toggle"
+import { MapScene } from "#/components/threeJS/map-scene"
 import { buttonVariants } from "#/components/ui/button"
 import { SearchBar } from "#/components/ui/search-bar"
 import { useIsLoggedIn } from "#/lib/auth-hooks"
@@ -62,7 +62,7 @@ const App = () => {
           results={ALL_RESULTS}
         />
 
-        <ThreeScene />
+        <MapScene />
         <div className="absolute flex flex-col gap-2 bottom-6 right-6 z-10">
           <FloorSelector />
           <RenderModeToggle />

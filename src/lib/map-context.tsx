@@ -3,7 +3,7 @@ import { createContext, useContext, useState } from "react"
 
 import { getFloorPlansData } from "#/server/floorplan.functions"
 
-import type { FloorPlan } from "#/components/threeJS/map-scene"
+import type { FloorPlan } from "#/types/floor-plan"
 import type { ReactNode } from "react"
 
 type RenderMode = "2d" | "3d"

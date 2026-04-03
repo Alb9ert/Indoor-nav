@@ -1,131 +1,60 @@
-import { useEffect, useRef } from "react"
+import { OrbitControls } from "@react-three/drei"
+import { Canvas } from "@react-three/fiber"
+import { Suspense, useMemo, useRef } from "react"
 import * as THREE from "three"
 
 import { useMap } from "#/lib/map-context"
 
-export interface FloorPlan {
-  floor: number
-  path: string
-  calibrationScale: number
-}
+import { CameraRig } from "./camera-rig"
+import { FLOOR_HEIGHT, MAX_POLAR_ANGLE, TOP_DOWN_POLAR } from "./constants"
+import { FloorPlane } from "./floor-plane"
 
-const FLOOR_HEIGHT = 1 // Height between floors (z-axis)
-const BASE_HEIGHT = 2
+export const MapScene = () => {
+  const { floors, currentFloor, renderMode } = useMap()
+  const controlsRef = useRef(null)
+  const neighbourOpacityRef = useRef(0)
 
-export const ThreeScene = () => {
-  const sceneMountRef = useRef<HTMLDivElement | null>(null)
-  const { floors: floorPlansData, currentFloor } = useMap()
+  const activeFloor = currentFloor ?? 0
+  const initialTarget = useMemo(
+    () => new THREE.Vector3(0, activeFloor * FLOOR_HEIGHT, 0),
+    [activeFloor],
+  )
 
-  useEffect(() => {
-    /////////////////
-    // Scene setup //
-    /////////////////
-    if (!sceneMountRef.current || floorPlansData.length === 0) return
+  return (
+    <Canvas
+      gl={{ antialias: true }}
+      camera={{ fov: 60, near: 0.1, far: 1000, position: [0, 20, 0.01] }}
+      style={{ width: "100%", height: "100%" }}
+    >
+      <CameraRig
+        activeFloor={activeFloor}
+        controlsRef={controlsRef}
+        neighbourOpacityRef={neighbourOpacityRef}
+      />
 
-    const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      sceneMountRef.current.clientWidth / sceneMountRef.current.clientHeight,
-      0.1,
-      1000,
-    )
+      <OrbitControls
+        ref={controlsRef}
+        target={initialTarget}
+        enableDamping
+        dampingFactor={0.1}
+        enablePan
+        enableZoom
+        enableRotate
+        touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
+        minPolarAngle={renderMode === "2d" ? TOP_DOWN_POLAR : 0}
+        maxPolarAngle={renderMode === "2d" ? TOP_DOWN_POLAR : MAX_POLAR_ANGLE}
+      />
 
-    camera.position.z = 7 //!!!!needs to be updated when more camera controls are added
-
-    ////////////////////
-    // Renderer setup //
-    ////////////////////
-    const existingCanvas = sceneMountRef.current.querySelector("canvas")
-    let canvas: HTMLCanvasElement | null = null
-    let renderer: THREE.WebGLRenderer
-
-    if (existingCanvas && existingCanvas instanceof HTMLCanvasElement) {
-      canvas = existingCanvas
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
-    } else {
-      renderer = new THREE.WebGLRenderer({ antialias: true })
-      canvas = renderer.domElement
-      sceneMountRef.current.appendChild(canvas)
-    }
-    renderer.setSize(sceneMountRef.current.clientWidth, sceneMountRef.current.clientHeight)
-
-    //////////////////////
-    // Load floor plans //
-    //////////////////////
-    const textureLoader = new THREE.TextureLoader()
-    const planes: THREE.Mesh[] = []
-
-    const floorsToLoad =
-      currentFloor === null
-        ? floorPlansData
-        : floorPlansData.filter((fp: FloorPlan) => fp.floor === currentFloor)
-
-    floorsToLoad.forEach((floorPlan: FloorPlan) => {
-      textureLoader.load(floorPlan.path, (texture) => {
-        // texture filtering
-        texture.minFilter = THREE.LinearFilter
-        texture.magFilter = THREE.LinearFilter
-
-        const height = BASE_HEIGHT * floorPlan.calibrationScale
-        const width = height * (texture.image.width / texture.image.height)
-
-        const geometry = new THREE.PlaneGeometry(width, height)
-        const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })
-        const plane = new THREE.Mesh(geometry, material)
-
-        plane.position.z = floorPlan.floor * FLOOR_HEIGHT
-
-        scene.add(plane)
-        planes.push(plane)
-      })
-    })
-
-    /////////////
-    // Animate //
-    /////////////
-    const animate = () => {
-      renderer.render(scene, camera)
-    }
-    renderer.setAnimationLoop(animate)
-
-    ///////////////////
-    // Handle resize //
-    ///////////////////
-    const handleResize = () => {
-      if (!sceneMountRef.current) return
-
-      const width = sceneMountRef.current.clientWidth
-      const height = sceneMountRef.current.clientHeight
-
-      camera.aspect = width / height
-      camera.updateProjectionMatrix()
-      renderer.setSize(width, height)
-    }
-
-    window.addEventListener("resize", handleResize)
-
-    /////////////
-    // Cleanup //
-    /////////////
-    return () => {
-      window.removeEventListener("resize", handleResize)
-      renderer.setAnimationLoop(null)
-
-      planes.forEach((plane) => {
-        scene.remove(plane)
-        plane.geometry.dispose()
-        const material = plane.material
-        if (!Array.isArray(material)) {
-          if (material instanceof THREE.MeshBasicMaterial && material.map) {
-            material.map.dispose()
-          }
-          material.dispose()
-        }
-      })
-
-      renderer.dispose()
-    }
-  }, [floorPlansData, currentFloor])
-
-  return <div ref={sceneMountRef} style={{ width: "100%", height: "100%" }} />
+      <Suspense fallback={null}>
+        {floors.map((floor) => (
+          <FloorPlane
+            key={floor.floor}
+            floor={floor}
+            active={floor.floor === activeFloor}
+            neighbourOpacityRef={neighbourOpacityRef}
+          />
+        ))}
+      </Suspense>
+    </Canvas>
+  )
 }
