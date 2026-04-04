@@ -11,10 +11,10 @@ export const RenderModeToggle = ({ className }: RenderModeToggleProps) => {
   return (
     <button
       className={cn(
-        "w-14 h-14 rounded-2xl bg-slate-800/95 backdrop-blur-sm flex items-center justify-center",
+        "w-14 h-14 rounded-2xl cursor-pointer bg-primary backdrop-blur-sm flex items-center justify-center",
         "transition-all duration-200 shadow-xl border border-slate-700/50",
-        "hover:bg-slate-700",
-        renderMode === "3d" && "ring-2 ring-blue-500/50",
+        "hover:bg-primary/80",
+        renderMode === "3d" && "ring-2 ring-secondary",
         className,
       )}
       onClick={() => {
