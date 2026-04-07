@@ -14,7 +14,7 @@ import {
 } from "#/components/ui/select"
 import { getFloorPlansData } from "#/server/floorplan.functions"
 
-import type { FloorPlan } from "#/components/threeJS/map-scene"
+import type { FloorPlan } from "#/types/floor-plan"
 
 interface Point {
   x: number
@@ -23,7 +23,7 @@ interface Point {
   ry: number
 }
 
-export const CalibrateFloor = () => {
+const CalibrateFloor = () => {
   const [selectedFloor, setSelectedFloor] = useState<number | null>(null)
   const [points, setPoints] = useState<Point[]>([])
   const containerRef = useRef<HTMLDivElement>(null)
@@ -38,9 +38,7 @@ export const CalibrateFloor = () => {
 
   // Calculate the distance in image pixels between the two points (Eucledian)
   const pixelDistance =
-    points.length === 2
-      ? Math.sqrt((points[1].x - points[0].x) ** 2 + (points[1].y - points[0].y) ** 2)
-      : 0
+    points.length === 2 ? Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y) : 0
 
   // Handle clicks on the floor plan image
   const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -122,6 +120,8 @@ export const CalibrateFloor = () => {
 
           {selectedFloorPlan && (
             <div
+              role="button"
+              tabIndex={0}
               ref={containerRef}
               onClick={handleImageClick}
               style={{ position: "relative", display: "inline-block", cursor: "crosshair" }}
@@ -129,13 +129,13 @@ export const CalibrateFloor = () => {
               <img src={selectedFloorPlan.path} alt="Floor plan" className="border max-w-full" />
 
               {/* Render points as red dots */}
-              {points.map((p, i) => (
+              {points.map((point) => (
                 <div
-                  key={i}
+                  key={`${point.rx}-${point.ry}`}
                   style={{
                     position: "absolute",
-                    left: p.rx,
-                    top: p.ry,
+                    left: point.rx,
+                    top: point.ry,
                     width: 10,
                     height: 10,
                     background: "red",

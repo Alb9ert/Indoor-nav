@@ -26,6 +26,8 @@
     "@fontsource-variable/inter": "^5.2.8",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
     "@t3-oss/env-core": "^0.13.10",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-devtools": "latest",
