@@ -1,15 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
+import { Building2 } from "lucide-react"
+import { useState } from "react"
+
 import { FloorSelector } from "#/components/floor-selector"
+import { useFuzzySearch } from "#/components/hooks/use-fuse"
 import { RenderModeToggle } from "#/components/render-mode-toggle"
 import { MapScene } from "#/components/threeJS/map-scene"
 import { buttonVariants } from "#/components/ui/button"
 import { SearchBar } from "#/components/ui/search-bar"
 import { useIsLoggedIn } from "#/lib/auth-hooks"
 import { MapProvider } from "#/lib/map-context"
-import { Building2 } from "lucide-react"
+
 import type { SearchResultItem } from "#/components/ui/search-result-list"
-import { useState } from "react"
-import { useFuzzySearch } from "#/components/hooks/use-fuse"
 
 const App = () => {
   const { isLoggedIn, isPending } = useIsLoggedIn()
