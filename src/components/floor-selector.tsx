@@ -53,10 +53,8 @@ export const FloorSelector = ({ className }: FloorSelectorProps) => {
             className={cn(
               "cursor-pointer w-12 h-12 rounded-xl backdrop-blur-sm font-medium text-sm",
               "transition-colors duration-150 flex items-center justify-center",
-              "border shadow-lg",
-              floor === currentFloor
-                ? "bg-secondary text-white border-black hover:bg-secondary/80"
-                : "bg-primary text-white border-black hover:bg-primary/80 ",
+              "border shadow-lg text-white border-black hover:bg-secondary",
+              floor === currentFloor ? "bg-secondary" : "bg-primary",
             )}
           >
             {floor}
@@ -70,9 +68,9 @@ export const FloorSelector = ({ className }: FloorSelectorProps) => {
           setIsOpen(!isOpen)
         }}
         className={cn(
-          "cursor-pointer w-14 h-14 rounded-2xl bg-slate-800/95 backdrop-blur-sm flex items-center justify-center",
+          "cursor-pointer w-14 h-14 rounded-2xl bg-primary backdrop-blur-sm flex items-center justify-center",
           "transition-all duration-200 shadow-xl border border-slate-700/50",
-          "hover:bg-slate-700",
+          "hover:bg-secondary",
           isOpen && "ring-2 ring-primary/50",
         )}
       >
