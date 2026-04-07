@@ -58,10 +58,9 @@ const App = () => {
         <SearchBar
           className="absolute top-4 left-30 z-10 w-90"
           placeholder="Search for rooms..."
-          type="integrated"
-          results={ALL_RESULTS}
+          type="fuzzysearch"
+          onResultClick={(item) => console.log("Selected:", item.title)}
         />
-
         <MapScene />
         <div className="absolute flex flex-col gap-2 bottom-6 right-6 z-10">
           <FloorSelector />
