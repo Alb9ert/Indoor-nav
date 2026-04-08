@@ -6,7 +6,7 @@ import { getFloorPlansData } from "#/server/floorplan.functions"
 import type { FloorPlan } from "#/types/floor-plan"
 import type { ReactNode } from "react"
 
-type RenderMode = "2d" | "3d"
+type RenderMode = "2d" | "3d" | "debug"
 
 interface MapContextValue {
   floors: FloorPlan[]
