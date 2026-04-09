@@ -3,21 +3,33 @@ import { useFrame, useThree } from "@react-three/fiber"
 import { useRef, useState } from "react"
 import * as THREE from "three"
 
+import { mapFromWorld } from "#/lib/coordinates"
 import { useMap } from "#/lib/map-context"
 
 import { FLOOR_HEIGHT } from "./constants"
 
 export const CursorCoordinates = () => {
   const { camera, raycaster, pointer } = useThree()
-  const { currentFloor } = useMap()
 
-  const [position, setPosition] = useState<THREE.Vector3 | null>(null)
+  const { currentFloor, debugMode } = useMap()
+
+  const positionRef = useRef(new THREE.Vector3())
+
+  const [position, setPosition] = useState(new THREE.Vector3())
+
+  const [coords, setCoords] = useState({
+    x: 0,
+    y: 0,
+    z: 0,
+  })
 
   const plane = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0))
 
+  const floorY = (currentFloor ?? 0) * FLOOR_HEIGHT
+
   useFrame(() => {
-    // Update plane distance based on current floor
-    const floorY = (currentFloor ?? 0) * FLOOR_HEIGHT
+    if (!debugMode) return
+
     plane.current.setFromNormalAndCoplanarPoint(
       new THREE.Vector3(0, 1, 0),
       new THREE.Vector3(0, floorY, 0),
@@ -25,36 +37,38 @@ export const CursorCoordinates = () => {
 
     raycaster.setFromCamera(pointer, camera)
 
-    const intersection = new THREE.Vector3()
-
-    const hit = raycaster.ray.intersectPlane(plane.current, intersection)
+    const hit = raycaster.ray.intersectPlane(plane.current, positionRef.current)
 
     if (hit) {
-      setPosition(intersection.clone())
+      const worldPos = positionRef.current.clone()
+
+      setPosition(worldPos)
+
+      setCoords(mapFromWorld(worldPos))
     }
   })
 
-  if (!position) return null
+  if (!debugMode) return null
 
   return (
-    <Html position={position} style={{ pointerEvents: "none" }}>
-      <div
-        style={{
-          background: "black",
-          color: "white",
-          padding: "4px 6px",
-          fontSize: "12px",
-          borderRadius: "4px",
-          whiteSpace: "nowrap",
-          transform: "translate(10px, 5px)",
-        }}
-      >
-        x: {position.x.toFixed(2)}
-        <br />
-        y: {position.z.toFixed(2)}
-        <br />
-        z: {currentFloor ?? 0}
-      </div>
-    </Html>
+    <>
+      <gridHelper
+        // eslint-disable-next-line react/no-unknown-property
+        args={[200, 100, 0xff0000, 0x444444]}
+        // eslint-disable-next-line react/no-unknown-property
+        position={[0, floorY + 0.02, 0]}
+        // eslint-disable-next-line react/no-unknown-property
+        rotation={[0, 0, 0]}
+      />
+      <Html position={position} className="pointer-events-none">
+        <div className="bg-black text-white px-1.5 py-1 text-[12px] rounded whitespace-nowrap translate-x-[10px] translate-y-[5px]">
+          x: {coords.x.toFixed(2)}
+          <br />
+          y: {coords.y.toFixed(2)}
+          <br />
+          z: {coords.z.toFixed(0)}
+        </div>
+      </Html>
+    </>
   )
 }

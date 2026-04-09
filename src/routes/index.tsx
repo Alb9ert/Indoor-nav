@@ -12,6 +12,7 @@ import { useIsLoggedIn } from "#/lib/auth-hooks"
 import { MapProvider } from "#/lib/map-context"
 
 import type { SearchResultItem } from "#/components/ui/search-result-list"
+import { DebugToggle } from "#/components/debug-toggle"
 
 const App = () => {
   const { isLoggedIn, isPending } = useIsLoggedIn()
@@ -33,12 +34,16 @@ const App = () => {
       <main className="w-screen h-screen overflow-y-hidden">
         {!isPending &&
           (isLoggedIn ? (
-            <Link
-              className={`${buttonVariants({ variant: "default" })} absolute top-4 right-6 z-20`}
-              to="/manage-floor"
-            >
-              Temp: Manage floor link
-            </Link>
+            // TO DO: Replace with toggle between different admin views
+            <>
+              <Link
+                className={`${buttonVariants({ variant: "default" })} absolute top-4 left-200 z-100`}
+                to="/manage-floor"
+              >
+                Temp: Manage floor link
+              </Link>
+              <DebugToggle className="absolute top-4 left-[500px] z-100" />
+            </>
           ) : null)}
         <SearchBar
           className="absolute top-4 left-30 z-10 w-90"
