@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute, Link, redirect } from "@tanstack/react-router"
 import { useState, useRef } from "react"
 
 import { CalibrateFloorForm } from "#/components/forms/calibrate-floor-form"
@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "#/components/ui/select"
 import { getFloorPlansData } from "#/server/floorplan.functions"
+import { getServerSession } from "#/lib/auth-server"
 
 import type { FloorPlan } from "#/types/floor-plan"
 
@@ -180,5 +181,11 @@ const CalibrateFloor = () => {
 }
 
 export const Route = createFileRoute("/manage-floor")({
+  beforeLoad: async () => {
+    const session = await getServerSession()
+    if (!session?.user || session.user.username !== "admin") {
+      throw redirect({ to: "/login" })
+    }
+  },
   component: CalibrateFloor,
 })
