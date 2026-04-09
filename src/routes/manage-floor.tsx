@@ -15,7 +15,6 @@ import {
 import { getServerSession } from "#/lib/auth-server"
 import { getFloorPlansData } from "#/server/floorplan.functions"
 
-
 import type { FloorPlan } from "#/types/floor-plan"
 
 interface Point {
@@ -185,7 +184,8 @@ const CalibrateFloor = () => {
 export const Route = createFileRoute("/manage-floor")({
   beforeLoad: async () => {
     const session = await getServerSession()
-    if (session?.user?.username !== "admin") {
+    if (session?.user.username !== "admin") {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw redirect({ to: "/login" })
     }
   },
