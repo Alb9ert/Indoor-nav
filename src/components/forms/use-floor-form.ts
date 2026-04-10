@@ -138,12 +138,16 @@ export const useFloorUpload = () => {
 
   const handleFloorChange = (value: string | null) => {
     if (value === null) return
-    if (Number(value) > 20) {
-      setUploadStatus({ state: "error", message: "Floor must be 20 or less" })
+    if (value === "-") {
+      form.setFieldValue("floor", value)
       return
     }
     if (isNaN(Number(value))) {
       setUploadStatus({ state: "error", message: "Floor must be a number" })
+      return
+    }
+    if (Number(value) > 20) {
+      setUploadStatus({ state: "error", message: "Floor must be 20 or less" })
       return
     }
     form.setFieldValue("floor", value)

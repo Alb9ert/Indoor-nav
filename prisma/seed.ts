@@ -23,13 +23,43 @@ async function main() {
   const floorPlans = await prisma.floorPlan.createMany({
     data: [
       {
+        floor: -1,
+        path: "/floorplans/floor_-1_ACM15_Kælder-1.png",
+        calibrationScale: 1.0,
+      }
+      {
         floor: 0,
-        path: "/floorplans/floor_0_ACM15_1.Sal_page-0001.jpg",
+        path: "/floorplans/floor_0_ACM15_Stue-1.png",
         calibrationScale: 1.0,
       },
       {
         floor: 1,
-        path: "/floorplans/floor_1_ACM15_2.Sal_page-0001.jpg",
+        path: "/floorplans/floor_1_ACM15_1.Sal-1.png",
+        calibrationScale: 1.0,
+      },
+      {
+        floor: 2,
+        path: "/floorplans/floor_2_ACM15_2.Sal-1.png",
+        calibrationScale: 1.0,
+      },
+      {
+        floor: 3,
+        path: "/floorplans/floor_3_ACM15_3.Sal-1.png",
+        calibrationScale: 1.0,
+      },
+      {
+        floor: 4,
+        path: "/floorplans/floor_4_ACM15_4.Sal-1.png",
+        calibrationScale: 1.0,
+      },
+      {
+        floor: 5,
+        path: "/floorplans/floor_5_ACM15_5.Sal-1.png",
+        calibrationScale: 1.0,
+      },
+      {
+        floor: 6,
+        path: "/floorplans/floor_6_ACM15_6.Sal-1.png",
         calibrationScale: 1.0,
       },
     ],
