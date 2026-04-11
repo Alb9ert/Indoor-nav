@@ -1,21 +1,21 @@
-# Dev - deploys on push to dev
 name: indoor-nav-dev
-reference: refs/heads/dev
+reference: refs/heads/main
+repository_url: https://gitea.ollioddi.dk/ollioddi/indoor-nav-deployment.git
 webhook_filter: "^refs/heads/dev$"
 compose_files:
-  - /compose/indoor-nav-dev.yaml
+  - docker-compose.dev.yaml
 env_files:
   - /env/indoor-nav-dev.env
 force_recreate: true
 remove_orphans: true
 timeout: 300
 ---
-# Prod - deploys on push to main
 name: indoor-nav-prod
 reference: refs/heads/main
+repository_url: https://gitea.ollioddi.dk/ollioddi/indoor-nav-deployment.git
 webhook_filter: "^refs/heads/main$"
 compose_files:
-  - /compose/indoor-nav-prod.yaml
+  - docker-compose.prod.yaml
 env_files:
   - /env/indoor-nav-prod.env
 force_recreate: true
