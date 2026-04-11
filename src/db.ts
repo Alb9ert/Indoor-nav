@@ -10,7 +10,7 @@ const host = env.POSTGRES_HOST || "localhost"
 const db = env.POSTGRES_DB || "indoor-nav"
 const port = env.POSTGRES_PORT || "5432" // optional, default PostgreSQL port
 
-export const connectionString = `postgresql://${user}:${password}@${host}:${port}/${db}`
+export const connectionString = `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${db}`
 
 const adapter = new PrismaPg({
   connectionString: connectionString,
