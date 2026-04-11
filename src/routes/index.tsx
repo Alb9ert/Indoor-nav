@@ -32,7 +32,7 @@ const App = () => {
   return (
     <MapProvider>
       <main className="w-screen h-screen overflow-y-hidden">
-        <p>Hello there</p>
+        <p>Foo</p>
         {!isPending &&
           (isLoggedIn ? (
             // TO DO: Replace with toggle between different admin views
