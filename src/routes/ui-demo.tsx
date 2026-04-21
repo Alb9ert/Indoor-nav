@@ -15,12 +15,14 @@ const ALL_RESULTS: SearchResultItem[] = [
     id: "lecture-hall",
     icon: <GraduationCap className="w-5 h-5" />,
     title: "Building 101",
+    roomType: "CLASSROOM",
     semantic: "Software lecture room",
   },
   {
     id: "library",
     icon: <Building2 className="w-5 h-5" />,
     title: "Main Library",
+    roomType: "LIBRARY",
     semantic: "University library",
   },
   {
@@ -42,12 +44,14 @@ const NEARBY_RESULTS: SearchResultItem[] = [
     id: "auditorium",
     icon: <Building2 className="w-5 h-5" />,
     title: "Auditorium A",
+    roomType: "AUDITORIUM",
     semantic: "Main auditorium",
   },
   {
     id: "canteen",
     icon: <MapPin className="w-5 h-5" />,
     title: "Student Canteen",
+    roomType: "FOOD_DRINK",
     semantic: "Cafeteria",
   },
   {

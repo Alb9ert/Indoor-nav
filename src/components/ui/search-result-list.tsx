@@ -1,5 +1,8 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { RoomTypeBadge } from "./room-type-badge"
+
+import type { RoomType } from "#/generated/prisma/enums"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -11,6 +14,8 @@ export interface SearchResultItem {
   iconBg?: string
   /** Primary label */
   title: string
+  /** Optional room category for a colored/icon label badge */
+  roomType?: RoomType
   /** Semantic description – e.g. "Software lecture room", "Metro station" */
   semantic?: string
 }
@@ -64,6 +69,11 @@ function ResultRow({
           <span className="block font-medium text-foreground text-sm leading-snug truncate">
             {item.title}
           </span>
+          {item.roomType && (
+            <span className="block mt-1">
+              <RoomTypeBadge type={item.roomType} variant="search" />
+            </span>
+          )}
           {item.semantic && (
             <span className="block text-xs text-muted-foreground leading-snug truncate mt-0.5">
               {item.semantic}
