@@ -34,11 +34,7 @@ export const RoomTypeBadge = ({ type, variant = "bare", className }: RoomTypeBad
     return (
       <Badge
         variant="outline"
-        className={cn(
-          "gap-1.5 border",
-          "px-2 py-0.5 text-[11px] font-medium",
-          className,
-        )}
+        className={cn("gap-1.5 border", "px-2 py-0.5 text-[11px] font-medium", className)}
         style={badgeStyle}
       >
         <Icon className="size-3.5" />
