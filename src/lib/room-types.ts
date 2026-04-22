@@ -107,7 +107,7 @@ export const getRoomTypeMeta = (type: RoomType): RoomTypeMeta => ROOM_TYPE_META[
  * channel to remove (0 = unchanged, 1 = black). Used to derive a room's
  * outline color from its fill.
  */
-export const darkenHex = (hex: string, amount = 0.55): string => {
+export const darkenHex = (hex: string, amount = 0.8): string => {
   const num = Number.parseInt(hex.slice(1), 16)
   const factor = 1 - amount
   const r = Math.round(((num >> 16) & 0xff) * factor)
