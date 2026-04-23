@@ -42,7 +42,7 @@ const RoomInfoBody = ({ room, onClose }: RoomInfoBodyProps) => (
       <div className="flex flex-col gap-2">
         <RoomTypeBadge type={room.type} variant="pill" />
         <h2 className="text-3xl font-bold leading-tight">{room.roomNumber}</h2>
-        <p className="text-base text-popover-foreground/80">{room.displayName ?? room.type}</p>
+        <p className="text-base text-popover-foreground/80">{room.displayName}</p>
       </div>
       <Button
         type="button"
@@ -98,10 +98,7 @@ export const RoomInfoPanel = () => {
     queryFn: () => getAllRoomsData(),
     enabled: viewingRoomId !== null,
   })
-  const room = (viewingRoomId ? rooms.find((r) => r.id === viewingRoomId) : null) as
-    | RoomView
-    | null
-    | undefined
+  const room = viewingRoomId ? (rooms.find((r) => r.id === viewingRoomId) as RoomView) : null
 
   const open = room != null
 
