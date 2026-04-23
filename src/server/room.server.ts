@@ -16,7 +16,7 @@ export interface RoomVertex {
 
 export interface CreateRoomInput {
   roomNumber: string
-  displayName: string
+  displayName?: string
   type: RoomType
   floor: number
   vertices: RoomVertex[]
@@ -25,7 +25,7 @@ export interface CreateRoomInput {
 export interface PersistedRoom {
   id: string
   roomNumber: string
-  displayName: string
+  displayName?: string
   type: RoomType
   floor: number
   /**
@@ -192,7 +192,7 @@ export const getAllRooms = async (): Promise<PersistedRoom[]> => {
     return {
       id: row.id,
       roomNumber: row.roomNumber,
-      displayName: row.displayName ?? "",
+      displayName: row.displayName,
       type: row.type,
       floor: row.floor,
       vertices: open.map(([x, z]) => ({ x, z })),
@@ -203,7 +203,7 @@ export const getAllRooms = async (): Promise<PersistedRoom[]> => {
 export interface UpdateRoomMetadataInput {
   id: string
   roomNumber: string
-  displayName: string
+  displayName?: string
   type: RoomType
 }
 

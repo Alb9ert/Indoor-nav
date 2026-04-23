@@ -33,7 +33,7 @@ const requiredString = (label: string) => (value: string) =>
 
 interface FormValues {
   roomNumber: string
-  displayName: string
+  displayName: string | undefined
   type: RoomType
 }
 
