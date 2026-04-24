@@ -6,7 +6,7 @@ import type { SearchResultItem } from "#/components/ui/search-result-list"
 import { getRoomTypeMeta, getRoomTypeOutline } from "#/lib/room-types"
 
 export const FuzzySearchBar = () => {
-  const { setViewingRoomId, setEditingNodeId, setEditingRoomId, activeTool } = useMap()
+  const { setViewingRoomId, setEditingRoomId, activeTool } = useMap()
   const [query, setQuery] = useState("")
   const { results, isLoading } = useFuzzySearch(query)
 
@@ -38,10 +38,14 @@ export const FuzzySearchBar = () => {
       onResultClick={(item) => {
         if (activeTool === "default")
           setViewingRoomId(((item as any).dbId as string) ?? null)
+        if (activeTool === "draw-room")
+            setEditingRoomId(((item as any).dbId as string) ?? null)
         if (activeTool === "edit-room")
             setEditingRoomId(((item as any).dbId as string) ?? null)
-/*         if (activeTool === "edit-node")
-            setEditingNodeId(((item as any).dbId as string) ?? null) */
+        if (activeTool === "draw-node")
+            setEditingRoomId(((item as any).dbId as string) ?? null)
+        if (activeTool === "connect-edge")
+            setEditingRoomId(((item as any).dbId as string) ?? null)
       }}
       showResultsWhenEmpty={true}
     />
