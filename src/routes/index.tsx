@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
+
 import { ActionBar } from "#/components/map/action-bar/action-bar"
+import { FuzzySearchBar } from "#/components/map/search/fuzzy-search-bar"
 import { ToolPalette } from "#/components/map/tool-palette/tool-palette"
 import { Compass } from "#/components/map/user-tools/compass"
 import { DebugToggle } from "#/components/map/user-tools/debug-toggle"
@@ -13,8 +15,6 @@ import { buttonVariants } from "#/components/ui/button"
 import { TooltipProvider } from "#/components/ui/tooltip"
 import { useIsLoggedIn } from "#/lib/auth-hooks"
 import { MapProvider } from "#/lib/map-context"
-
-import { FuzzySearchBar } from "#/components/map/search/fuzzy-search-bar"
 
 const App = () => {
   const { isLoggedIn, isPending } = useIsLoggedIn()

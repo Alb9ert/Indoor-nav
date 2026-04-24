@@ -1,9 +1,13 @@
 import { useState } from "react"
+
 import { useFuzzySearch } from "#/components/hooks/use-fuse"
 import { SearchBar } from "#/components/ui/search-bar"
 import { useMap } from "#/lib/map-context"
-import type { SearchResultItem } from "#/components/ui/search-result-list"
 import { getRoomTypeMeta, getRoomTypeOutline } from "#/lib/room-types"
+
+import type { SearchResultItem } from "#/components/ui/search-result-list"
+
+type SearchResultItemWithDbId = SearchResultItem & { dbId: string }
 
 export const FuzzySearchBar = () => {
   const { setViewingRoomId, setEditingRoomId, activeTool } = useMap()
@@ -33,19 +37,17 @@ export const FuzzySearchBar = () => {
       placeholder="Search locations..."
       value={query}
       onQueryChange={setQuery}
-      onSearch={(q) => console.log("Search:", q)}
+      onSearch={(q) => {
+        console.log("Search:", q)
+      }}
       results={fuzzyResults}
       onResultClick={(item) => {
-        if (activeTool === "default")
-          setViewingRoomId(((item as any).dbId as string) ?? null)
-        if (activeTool === "draw-room")
-            setEditingRoomId(((item as any).dbId as string) ?? null)
-        if (activeTool === "edit-room")
-            setEditingRoomId(((item as any).dbId as string) ?? null)
-        if (activeTool === "draw-node")
-            setEditingRoomId(((item as any).dbId as string) ?? null)
-        if (activeTool === "connect-edge")
-            setEditingRoomId(((item as any).dbId as string) ?? null)
+        const { dbId } = item as SearchResultItemWithDbId
+        if (activeTool === "default") {
+          setViewingRoomId(dbId)
+        } else if (["draw-room", "edit-room", "draw-node", "connect-edge"].includes(activeTool)) {
+          setEditingRoomId(dbId)
+        }
       }}
       showResultsWhenEmpty={true}
     />

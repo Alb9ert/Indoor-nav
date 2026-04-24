@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query"
 import Fuse from "fuse.js"
 import { useState, useMemo, useEffect } from "react"
 
-import { getAllRoomsFunction } from "#/server/search.functions"
 import { ROOM_TYPE_ALT } from "#/lib/room-types"
+import { getAllRoomsFunction } from "#/server/search.functions"
 
 export const useFuzzySearch = (searchTerm: string) => {
   const [debouncedTerm, setDebouncedTerm] = useState(searchTerm)
@@ -26,19 +26,20 @@ export const useFuzzySearch = (searchTerm: string) => {
     queryFn: getAllRoomsFunction,
   })
 
-  const allRoomsWithAlts = useMemo(() => 
-    (allRooms ?? []).map((room) => ({
-      ...room,
-      room_type_alt: ROOM_TYPE_ALT[room.type]?.join(" ") ?? "",
-    })),
-    [allRooms]
+  const allRoomsWithAlts = useMemo(
+    () =>
+      allRooms?.map((room) => ({
+        ...room,
+        room_type_alt: ROOM_TYPE_ALT[room.type].join(" "),
+      })),
+    [allRooms],
   )
 
   const fuse = new Fuse(allRoomsWithAlts ?? [], {
     keys: [
       { name: "roomNumber", weight: 0.7 },
       { name: "displayName", weight: 0.7 },
-      { name: "type", weight: 0.3},
+      { name: "type", weight: 0.3 },
       { name: "room_type_alt", weight: 0.3 },
     ],
     threshold: 0.4,
