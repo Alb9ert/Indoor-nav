@@ -65,7 +65,8 @@ function ResultRow({
         {/* Text block */}
         <span className="flex-1 min-w-0">
           <span className="block font-medium text-foreground text-sm leading-snug truncate">
-            {item.id} &nbsp; • &nbsp; {item.title}
+            {item.id}
+            {item.title ? <> &nbsp; • &nbsp; {item.title}</> : null}
           </span>
           {item.type && (
             <span className="block text-xs text-muted-foreground leading-snug truncate mt-0.5">

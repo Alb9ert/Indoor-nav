@@ -20,6 +20,7 @@ import { useIsLoggedIn } from "#/lib/auth-hooks"
 import { MapProvider } from "#/lib/map-context"
 
 import type { SearchResultItem } from "#/components/ui/search-result-list"
+import { getRoomTypeMeta, getRoomTypeOutline } from "#/lib/room-types"
 
 const App = () => {
   const { isLoggedIn, isPending } = useIsLoggedIn()
@@ -29,12 +30,19 @@ const App = () => {
 
   const fuzzyResults: SearchResultItem[] = isLoading
     ? []
-    : results.map((r) => ({
-        id: r.item.roomNumber,
-        icon: <Building2 className="w-5 h-5" />,
-        title: r.item.roomNumber,
-        type: r.item.type,
-      }))
+    : results.map((r) => {
+        const meta = getRoomTypeMeta(r.item.type)
+        const outline = getRoomTypeOutline(r.item.type)
+        const Icon = meta.icon
+
+        return {
+          id: r.item.roomNumber,
+          icon: <Icon className="w-5 h-5" style={{ color: outline }} />,
+          iconBgStyle: { backgroundColor: meta.color, outline: `2px solid ${outline}` },
+          title: r.item.displayName || "",
+          type: meta.label,
+        }
+      })
 
   return (
     <TooltipProvider>

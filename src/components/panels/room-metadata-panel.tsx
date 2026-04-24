@@ -117,6 +117,7 @@ const RoomCreateForm = () => {
       drawing.reset()
       form.reset()
       void queryClient.invalidateQueries({ queryKey: ["rooms"] })
+      void queryClient.invalidateQueries({ queryKey: ["getAllRooms"] })
     },
   })
 
@@ -295,6 +296,7 @@ const RoomEditForm = ({ room }: RoomEditFormProps) => {
     onSuccess: () => {
       setEditingRoomId(null)
       void queryClient.invalidateQueries({ queryKey: ["rooms"] })
+      void queryClient.invalidateQueries({ queryKey: ["getAllRooms"] })
     },
   })
 
@@ -306,6 +308,7 @@ const RoomEditForm = ({ room }: RoomEditFormProps) => {
       setEditingRoomId(null)
       setConfirmingDelete(false)
       void queryClient.invalidateQueries({ queryKey: ["rooms"] })
+      void queryClient.invalidateQueries({ queryKey: ["getAllRooms"] })
     },
   })
 
