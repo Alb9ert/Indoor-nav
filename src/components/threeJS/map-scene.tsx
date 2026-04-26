@@ -9,6 +9,7 @@ import { AdaptiveGrid } from "./adaptive-grid"
 import { CameraRig } from "./camera-rig"
 import { FLOOR_HEIGHT, MAX_POLAR_ANGLE, TOP_DOWN_POLAR } from "./constants"
 import { CursorCoordinates } from "./cursor-coordinates"
+import { ConnectEdgeLayer } from "./connect-edge-layer"
 import { DrawingLayer } from "./drawing-layer"
 import { FloorPlane } from "./floor-plane"
 import { GraphLayer } from "./graph-layer"
@@ -75,6 +76,9 @@ export const MapScene = () => {
         <RoomPolygonsLayer neighbourOpacityRef={neighbourOpacityRef} />
         {activeTool === "draw-room" && activeFloorPlan && <DrawingLayer floor={activeFloorPlan} />}
         {activeTool === "draw-node" && activeFloorPlan && <GraphLayer floor={activeFloorPlan} />}
+        {activeTool === "connect-edge" && activeFloorPlan && (
+          <ConnectEdgeLayer floor={activeFloorPlan} />
+        )}
       </Suspense>
     </Canvas>
   )

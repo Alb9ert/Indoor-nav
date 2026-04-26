@@ -68,6 +68,12 @@ interface MapContextValue {
   setEditingNodeId: (id: string | null) => void
   pendingNode: PendingNode | null
   setPendingNode: (node: PendingNode | null) => void
+  /** The first node selected in connect-edge mode, awaiting a second click. */
+  pendingEdgeFromNodeId: string | null
+  setPendingEdgeFromNodeId: (id: string | null) => void
+  /** The edge currently selected for viewing/deletion in connect-edge mode. */
+  editingEdgeId: string | null
+  setEditingEdgeId: (id: string | null) => void
 
   /**
    * The room currently being viewed in the end-user info drawer, or null.
@@ -129,6 +135,8 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
   const [viewingRoomId, setViewingRoomId] = useState<string | null>(null)
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null)
   const [pendingNode, setPendingNode] = useState<PendingNode | null>(null)
+  const [pendingEdgeFromNodeId, setPendingEdgeFromNodeId] = useState<string | null>(null)
+  const [editingEdgeId, setEditingEdgeId] = useState<string | null>(null)
   const previousRenderModeRef = useRef<RenderMode | null>(null)
   const controlsRef = useRef<OrbitControlsHandle | null>(null)
   const gridSpacingRef = useRef<number | null>(null)
@@ -158,6 +166,8 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
       setViewingRoomId(null)
       setEditingNodeId(null)
       setPendingNode(null)
+      setPendingEdgeFromNodeId(null)
+      setEditingEdgeId(null)
     },
     [renderMode],
   )
@@ -208,6 +218,10 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
       setEditingNodeId: handleSetEditingNodeId,
       pendingNode,
       setPendingNode,
+      pendingEdgeFromNodeId,
+      setPendingEdgeFromNodeId,
+      editingEdgeId,
+      setEditingEdgeId,
     }),
     [
       floors,
@@ -229,6 +243,8 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
       handleSetViewingRoomId,
       editingNodeId,
       pendingNode,
+      pendingEdgeFromNodeId,
+      editingEdgeId,
       snapToGrid,
     ],
   )

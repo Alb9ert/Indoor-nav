@@ -15,7 +15,7 @@ interface ToolPaletteProps {
  * (e.g. `connect-edge`) that aren't wired yet — drop an id in here once its
  * implementation lands.
  */
-const VISIBLE_TOOLS: ToolId[] = ["default", "draw-room", "edit-room", "draw-node"]
+const VISIBLE_TOOLS: ToolId[] = ["default", "draw-room", "edit-room", "draw-node", "connect-edge"]
 
 /**
  * Vertical tool palette on the left edge of the map. Exactly one tool can be

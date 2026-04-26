@@ -6,14 +6,14 @@ import * as THREE from "three"
 
 import { useMap } from "#/lib/map-context"
 import { pointStrictlyInsidePolygon } from "#/lib/polygon-validation"
-import { getAllNodesData } from "#/server/graph.functions"
+import { getAllEdgesData, getAllNodesData } from "#/server/graph.functions"
 import { getAllRoomsData } from "#/server/room.functions"
 
 import { useCanvasPointer } from "../hooks/use-canvas-pointer"
 import { useSnapToExisting } from "../hooks/use-snap-to-existing"
 
 import { DRAWING_LIFT, FLOOR_HEIGHT, SNAP_RADIUS_METERS } from "./constants"
-import { VertexMarker } from "./draw-primitives"
+import { EdgePreview, VertexMarker } from "./draw-primitives"
 import { RaycastPlane } from "./raycast-plane"
 
 import type { FloorPlan } from "#/types/floor-plan"
@@ -23,6 +23,7 @@ interface GraphLayerProps {
 }
 
 const NODE_COLOR = "#3b82f6"
+const NODE_DOOR_COLOR = "#a855f7"
 const NODE_INACTIVE_COLOR = "#ef4444"
 const NODE_HIGHLIGHT_COLOR = "#f97316"
 const CURSOR_COLOR = "#fbbf24"
@@ -88,7 +89,13 @@ const ClickableNode = ({
       <sphereGeometry args={[NODE_RADIUS, 32, 32]} />
       <meshBasicMaterial
         color={
-          highlighted ? NODE_HIGHLIGHT_COLOR : node.isActivated ? NODE_COLOR : NODE_INACTIVE_COLOR
+          highlighted
+            ? NODE_HIGHLIGHT_COLOR
+            : !node.isActivated
+              ? NODE_INACTIVE_COLOR
+              : node.type === "DOOR"
+                ? NODE_DOOR_COLOR
+                : NODE_COLOR
         }
       />
     </mesh>
@@ -123,6 +130,11 @@ export const GraphLayer = ({ floor }: GraphLayerProps) => {
     queryFn: getAllNodesData,
   })
 
+  const { data: allEdges = [] } = useQuery({
+    queryKey: ["edges"],
+    queryFn: getAllEdgesData,
+  })
+
   const { data: allRooms = [] } = useQuery({
     queryKey: ["rooms"],
     queryFn: getAllRoomsData,
@@ -131,6 +143,15 @@ export const GraphLayer = ({ floor }: GraphLayerProps) => {
   const floorNodes = useMemo(
     () => allNodes.filter((n) => n.floor === floor.floor),
     [allNodes, floor.floor],
+  )
+
+  const nodeById = useMemo(() => new Map(allNodes.map((n) => [n.id, n])), [allNodes])
+
+  const floorNodeIds = useMemo(() => new Set(floorNodes.map((n) => n.id)), [floorNodes])
+
+  const floorEdges = useMemo(
+    () => allEdges.filter((e) => floorNodeIds.has(e.fromNodeId) && floorNodeIds.has(e.toNodeId)),
+    [allEdges, floorNodeIds],
   )
 
   const floorRooms = useMemo(
@@ -185,6 +206,23 @@ export const GraphLayer = ({ floor }: GraphLayerProps) => {
   return (
     <>
       <RaycastPlane floor={floor} {...handlers} />
+
+      {floorEdges.map((edge) => {
+        const a = nodeById.get(edge.fromNodeId)
+        const b = nodeById.get(edge.toNodeId)
+        if (!a || !b) return null
+        return (
+          <EdgePreview
+            key={edge.id}
+            points={[
+              [a.x, floorY + DRAWING_LIFT, -a.y],
+              [b.x, floorY + DRAWING_LIFT, -b.y],
+            ]}
+            color={edge.isActivated ? "#3b82f6" : "#ef4444"}
+            lineWidth={1.5}
+          />
+        )
+      })}
 
       {floorNodes.map((node) => (
         <ClickableNode

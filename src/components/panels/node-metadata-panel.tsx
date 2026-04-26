@@ -339,6 +339,7 @@ const NodeEditForm = ({ nodeId }: { nodeId: string }) => {
     onSuccess: () => {
       setEditingNodeId(null)
       void queryClient.invalidateQueries({ queryKey: ["nodes"] })
+      void queryClient.invalidateQueries({ queryKey: ["edges"] })
     },
   })
 
@@ -349,6 +350,7 @@ const NodeEditForm = ({ nodeId }: { nodeId: string }) => {
         : deactivateNodeData({ data: { id: nodeId } }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["nodes"] })
+      void queryClient.invalidateQueries({ queryKey: ["edges"] })
     },
   })
 
