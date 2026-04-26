@@ -94,11 +94,19 @@ const EdgePanel = ({ edgeId }: { edgeId: string }) => {
               type="button"
               variant="destructive"
               disabled={deleteMutation.isPending}
-              onClick={() => { deleteMutation.mutate(); }}
+              onClick={() => {
+                deleteMutation.mutate()
+              }}
             >
               {deleteMutation.isPending ? "Deleting…" : "Confirm delete"}
             </Button>
-            <Button type="button" variant="outline" onClick={() => { setConfirmingDelete(false); }}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setConfirmingDelete(false)
+              }}
+            >
               Cancel
             </Button>
           </>
@@ -107,7 +115,9 @@ const EdgePanel = ({ edgeId }: { edgeId: string }) => {
             type="button"
             variant="destructive"
             disabled={deleteMutation.isPending}
-            onClick={() => { setConfirmingDelete(true); }}
+            onClick={() => {
+              setConfirmingDelete(true)
+            }}
           >
             <Trash2 className="size-4" />
             Delete edge
