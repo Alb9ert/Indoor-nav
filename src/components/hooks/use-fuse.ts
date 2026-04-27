@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query"
 import Fuse from "fuse.js"
 import { useState, useMemo, useEffect } from "react"
 
-import { getAllRoomsFunction } from "#/server/search.functions"
+import { ROOM_TYPE_ALT } from "#/lib/room-types"
+import { getAllRoomsData } from "#/server/room.functions"
 
 export const useFuzzySearch = (searchTerm: string) => {
   const [debouncedTerm, setDebouncedTerm] = useState(searchTerm)
@@ -21,16 +22,30 @@ export const useFuzzySearch = (searchTerm: string) => {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["getAllRooms"],
-    queryFn: getAllRoomsFunction,
+    queryKey: ["rooms"],
+    queryFn: getAllRoomsData,
   })
 
-  const fuse = new Fuse(allRooms ?? [], {
-    keys: [{ name: "id", weight: 0.7 }],
-    threshold: 0.4,
+  const allRoomsWithAlts = useMemo(
+    () =>
+      allRooms?.map((room) => ({
+        ...room,
+        room_type_alt: ROOM_TYPE_ALT[room.type],
+      })),
+    [allRooms],
+  )
+
+  const fuse = new Fuse(allRoomsWithAlts ?? [], {
+    keys: [
+      { name: "roomNumber", weight: 0.7 },
+      { name: "displayName", weight: 0.7 },
+      { name: "type", weight: 0.3 },
+      { name: "room_type_alt", weight: 0.3 },
+    ],
+    threshold: debouncedTerm.length <= 3 ? 0.6 : 0.4,
   })
 
-  const results = useMemo(() => fuse.search(debouncedTerm), [fuse, debouncedTerm])
+  const results = useMemo(() => fuse.search(debouncedTerm, { limit: 6 }), [fuse, debouncedTerm])
 
   return { results, isLoading, isError }
 }
