@@ -1,7 +1,7 @@
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Trash2, X } from "lucide-react"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { Button } from "#/components/ui/button"
 import { Input } from "#/components/ui/input"
@@ -162,6 +162,17 @@ const NodeCreateForm = () => {
     form.reset()
     mutation.reset()
   }
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault()
+        void form.handleSubmit()
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [form])
 
   return (
     <form
@@ -375,6 +386,17 @@ const NodeEditForm = ({ nodeId }: { nodeId: string }) => {
     updateMutation.reset()
     deleteMutation.reset()
   }
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault()
+        void form.handleSubmit()
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [form])
 
   const isBusy = updateMutation.isPending || deleteMutation.isPending
 
