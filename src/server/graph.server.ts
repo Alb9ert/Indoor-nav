@@ -51,12 +51,23 @@ export class Graph {
     const node = this.nodes.get(nodeId)
     if (!node) return
     node.isActivated = false
+    this._setEdgesActivatedForNode(nodeId, false)
   }
 
   activateNodeById(nodeId: Node["id"]) {
     const node = this.nodes.get(nodeId)
     if (!node) return
     node.isActivated = true
+    this._setEdgesActivatedForNode(nodeId, true)
+  }
+
+  private _setEdgesActivatedForNode(nodeId: Node["id"], activated: boolean) {
+    for (const edge of this.adjacency.get(nodeId) ?? []) {
+      edge.isActivated = activated
+      for (const rev of this.adjacency.get(edge.toNodeId) ?? []) {
+        if (rev.toNodeId === nodeId) rev.isActivated = activated
+      }
+    }
   }
 
   // ----------------------------- //
@@ -181,6 +192,10 @@ export const getAllNodesInDb = async () => {
   return await prisma.node.findMany()
 }
 
+export const getAllEdgesInDb = async () => {
+  return await prisma.edge.findMany()
+}
+
 export const updateNodeTypeInDb = async (nodeId: string, type: string) => {
   const updated = await prisma.node.update({
     where: { id: nodeId },
@@ -233,10 +248,13 @@ export const deleteNodeByIdInDb = async (nodeId: Node["id"]) => {
 }
 
 export const activateNodeByIdInDb = async (nodeId: Node["id"]) => {
-  const updated = await prisma.node.update({
-    where: { id: nodeId },
-    data: { isActivated: true },
-  })
+  const [updated] = await prisma.$transaction([
+    prisma.node.update({ where: { id: nodeId }, data: { isActivated: true } }),
+    prisma.edge.updateMany({
+      where: { OR: [{ fromNodeId: nodeId }, { toNodeId: nodeId }] },
+      data: { isActivated: true },
+    }),
+  ])
 
   const g = await getGraph()
   g.activateNodeById(nodeId)
@@ -245,10 +263,13 @@ export const activateNodeByIdInDb = async (nodeId: Node["id"]) => {
 }
 
 export const deactiveNodeByIdInDb = async (nodeId: Node["id"]) => {
-  const updated = await prisma.node.update({
-    where: { id: nodeId },
-    data: { isActivated: false },
-  })
+  const [updated] = await prisma.$transaction([
+    prisma.node.update({ where: { id: nodeId }, data: { isActivated: false } }),
+    prisma.edge.updateMany({
+      where: { OR: [{ fromNodeId: nodeId }, { toNodeId: nodeId }] },
+      data: { isActivated: false },
+    }),
+  ])
 
   const g = await getGraph()
   g.deactivateNodeById(nodeId)

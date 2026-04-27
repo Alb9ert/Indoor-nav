@@ -5,6 +5,7 @@ import { NodeType } from "#/generated/prisma/enums"
 
 import {
   getAllNodesInDb,
+  getAllEdgesInDb,
   updateNodeTypeInDb,
   updateNodeInDb,
   addNodeInDb,
@@ -21,6 +22,10 @@ const nodeTypeEnum = z.enum(Object.values(NodeType) as [string, ...string[]])
 
 export const getAllNodesData = createServerFn({ method: "GET" }).handler(async () => {
   return await getAllNodesInDb()
+})
+
+export const getAllEdgesData = createServerFn({ method: "GET" }).handler(async () => {
+  return await getAllEdgesInDb()
 })
 
 const updateNodeTypeSchema = z.object({
@@ -68,6 +73,7 @@ export const addEdgeSchema = z.object({
   doors: z.boolean().optional(),
   stairs: z.boolean().optional(),
   elevators: z.boolean().optional(),
+  isActivated: z.boolean().optional(),
 })
 
 export const edgeIdSchema = z.object({
@@ -114,6 +120,7 @@ export const addEdgeData = createServerFn({ method: "POST" })
       doors: data.doors,
       stairs: data.stairs,
       elevators: data.elevators,
+      isActivated: data.isActivated,
       fromNode: { connect: { id: data.fromNodeId } },
       toNode: { connect: { id: data.toNodeId } },
     })

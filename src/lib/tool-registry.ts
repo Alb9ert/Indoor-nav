@@ -1,4 +1,4 @@
-import { SquareMousePointer, MousePointer2, Pencil, Waypoints } from "lucide-react"
+import { SquareMousePointer, MousePointer2, Pencil, Waypoints, GitBranch } from "lucide-react"
 
 import type { ActiveTool } from "#/lib/map-context"
 import type { LucideIcon } from "lucide-react"
@@ -29,7 +29,7 @@ export const TOOL_REGISTRY: ToolMeta[] = [
     id: "connect-edge",
     label: "Connect edges",
     activeLabel: "Connecting edges",
-    icon: Waypoints,
+    icon: GitBranch,
   },
 ]
 const toolById = new Map(TOOL_REGISTRY.map((t) => [t.id, t]))
