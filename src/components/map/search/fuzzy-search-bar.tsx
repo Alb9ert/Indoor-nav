@@ -1,3 +1,4 @@
+import { Search } from "lucide-react"
 import { useState } from "react"
 
 import { useFuzzySearch } from "#/components/hooks/use-fuse"
@@ -6,7 +7,6 @@ import { useMap } from "#/lib/map-context"
 import { getRoomTypeMeta, getRoomTypeOutline } from "#/lib/room-types"
 
 import type { SearchResultItem } from "#/components/ui/search-result-list"
-import { Search } from "lucide-react"
 
 type SearchResultItemWithDbId = SearchResultItem & { dbId: string }
 
@@ -31,41 +31,41 @@ export const FuzzySearchBar = () => {
           dbId: r.item.id,
         }
       })
-const noResults = hasQuery && !isLoading && fuzzyResults.length === 0
+  const noResults = hasQuery && !isLoading && fuzzyResults.length === 0
 
-const displayResults: SearchResultItem[] = noResults
-  ? [
-      {
-        id: "No results found",
-        title: "No locations found",
-        type: "",
-        icon: <Search className="w-5 h-5" style={{ color: "gray" }}/>,
-        iconBgStyle: { backgroundColor: "transparent" },
-      },
-    ]
-  : fuzzyResults
+  const displayResults: SearchResultItem[] = noResults
+    ? [
+        {
+          id: "No results found",
+          title: "No locations found",
+          type: "",
+          icon: <Search className="w-5 h-5" style={{ color: "gray" }} />,
+          iconBgStyle: { backgroundColor: "transparent" },
+        },
+      ]
+    : fuzzyResults
 
-return (
-  <SearchBar
-    className="absolute top-4 left-30 z-10 w-90"
-    type="integrated"
-    placeholder="Search locations..."
-    value={query}
-    onQueryChange={setQuery}
-    onSearch={(q) => {
-      console.log("Search:", q)
-    }}
-    results={displayResults}
-    onResultClick={(item) => {
-      if (item.id === "__no-results__") return
-      const { dbId } = item as SearchResultItemWithDbId
-      if (activeTool === "default") {
-        setViewingRoomId(dbId)
-      } else if (["draw-room", "edit-room", "draw-node", "connect-edge"].includes(activeTool)) {
-        setEditingRoomId(dbId)
-      }
-    }}
-    showResultsWhenEmpty={true}
-  />
-)
+  return (
+    <SearchBar
+      className="absolute top-4 left-30 z-10 w-90"
+      type="integrated"
+      placeholder="Search locations..."
+      value={query}
+      onQueryChange={setQuery}
+      onSearch={(q) => {
+        console.log("Search:", q)
+      }}
+      results={displayResults}
+      onResultClick={(item) => {
+        if (item.id === "__no-results__") return
+        const { dbId } = item as SearchResultItemWithDbId
+        if (activeTool === "default") {
+          setViewingRoomId(dbId)
+        } else if (["draw-room", "edit-room", "draw-node", "connect-edge"].includes(activeTool)) {
+          setEditingRoomId(dbId)
+        }
+      }}
+      showResultsWhenEmpty={true}
+    />
+  )
 }
