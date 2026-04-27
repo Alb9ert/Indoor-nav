@@ -152,8 +152,7 @@ const RoomPolygon = ({
       if ((camera as THREE.OrthographicCamera).isOrthographicCamera) {
         shouldShowIcon = (camera as THREE.OrthographicCamera).zoom >= ICON_HIDE_ZOOM_THRESHOLD_2D
       } else {
-        shouldShowIcon =
-          camera.position.distanceTo(iconPosition) <= ICON_HIDE_DISTANCE_THRESHOLD_3D
+        shouldShowIcon = camera.position.distanceTo(iconPosition) <= ICON_HIDE_DISTANCE_THRESHOLD_3D
       }
     }
 
