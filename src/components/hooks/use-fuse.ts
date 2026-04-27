@@ -30,7 +30,7 @@ export const useFuzzySearch = (searchTerm: string) => {
     () =>
       allRooms?.map((room) => ({
         ...room,
-        room_type_alt: ROOM_TYPE_ALT[room.type].join(" "),
+        room_type_alt: ROOM_TYPE_ALT[room.type] ?? [],
       })),
     [allRooms],
   )

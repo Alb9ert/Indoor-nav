@@ -148,7 +148,6 @@ export const ROOM_TYPE_ALT: Record<RoomType, string[]> = {
     "forelæsningsrum",
     "undervisningsrum",
     "kursusrum",
-    "træningsrum",
     "workshoprum",
   ],
   GROUP_ROOM: [
