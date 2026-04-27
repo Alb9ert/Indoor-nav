@@ -138,7 +138,7 @@ export const createRoom = async (input: CreateRoomInput): Promise<{ id: string }
   UPDATE "Node"
   SET "roomId" = ${id},
       "updatedAt" = NOW()
-  WHERE floor = ${floor}
+  WHERE "floor" = ${floor}
     AND "roomId" IS NULL
     AND ST_Contains(
       ST_GeomFromText(${wkt}, 0),
