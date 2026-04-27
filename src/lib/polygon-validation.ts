@@ -24,11 +24,24 @@ export interface PolygonObstacle {
   label: string
 }
 
+const EPSILON = 1e-9
+
 /** Cross-product orientation of three 2D points (in the X/Z plane). */
 const orientation = (p: PlanePoint, q: PlanePoint, r: PlanePoint): number => {
   const val = (q.z - p.z) * (r.x - q.x) - (q.x - p.x) * (r.z - q.z)
-  if (val === 0) return 0
+  if (Math.abs(val) <= EPSILON) return 0
   return val > 0 ? 1 : -1
+}
+
+/** Returns true when p lies on the closed segment [a, b]. */
+const pointOnSegment = (p: PlanePoint, a: PlanePoint, b: PlanePoint): boolean => {
+  if (orientation(a, b, p) !== 0) return false
+  return (
+    p.x >= Math.min(a.x, b.x) - EPSILON &&
+    p.x <= Math.max(a.x, b.x) + EPSILON &&
+    p.z >= Math.min(a.z, b.z) - EPSILON &&
+    p.z <= Math.max(a.z, b.z) + EPSILON
+  )
 }
 
 /**
@@ -70,6 +83,12 @@ export const pointStrictlyInsidePolygon = (
   p: PlanePoint,
   polygon: readonly PlanePoint[],
 ): boolean => {
+  // Boundary points are explicitly outside for "interior overlap" checks,
+  // so shared walls/corners between adjacent rooms remain valid.
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    if (pointOnSegment(p, polygon[j], polygon[i])) return false
+  }
+
   let inside = false
   const n = polygon.length
   for (let i = 0, j = n - 1; i < n; j = i++) {
