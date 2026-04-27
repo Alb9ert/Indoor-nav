@@ -7,10 +7,8 @@ interface RenderModeToggleProps {
 }
 
 export const RenderModeToggle = ({ className }: RenderModeToggleProps) => {
-  const { renderMode, setRenderMode, activeTool, connectEdgeMode, isSelectingFloor } = useMap()
-  const locked =
-    activeTool !== "default" &&
-    !(activeTool === "connect-edge" && connectEdgeMode === "cross-floor")
+  const { renderMode, setRenderMode, activeTool, isSelectingFloor } = useMap()
+  const locked = activeTool !== "default" && activeTool !== "connect-edge"
 
   if (isSelectingFloor) return null
 

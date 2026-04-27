@@ -232,6 +232,18 @@ export const ConnectEdgeLayer = ({ floor }: ConnectEdgeLayerProps) => {
     [allEdges, floorNodeIds],
   )
 
+  // Cross-floor edges (stairs/elevators) where one endpoint is on this floor — shown read-only
+  const crossFloorEdges = useMemo(
+    () =>
+      allEdges.filter((e) => {
+        const a = nodeById.get(e.fromNodeId)
+        const b = nodeById.get(e.toNodeId)
+        if (!a || !b || a.floor === b.floor) return false
+        return a.floor === floor.floor || b.floor === floor.floor
+      }),
+    [allEdges, nodeById, floor.floor],
+  )
+
   const sourceNode = pendingEdgeFromNodeId ? nodeById.get(pendingEdgeFromNodeId) : null
 
   const handleBackgroundClick = useCallback(() => {
@@ -257,6 +269,21 @@ export const ConnectEdgeLayer = ({ floor }: ConnectEdgeLayerProps) => {
       <RaycastPlane floor={floor} {...handlers} />
 
       {floorEdges.map((edge) => {
+        const a = nodeById.get(edge.fromNodeId)
+        const b = nodeById.get(edge.toNodeId)
+        if (!a || !b) return null
+        return (
+          <ClickableEdge
+            key={edge.id}
+            edge={edge}
+            fromNode={a}
+            toNode={b}
+            isSelected={edge.id === editingEdgeId}
+          />
+        )
+      })}
+
+      {crossFloorEdges.map((edge) => {
         const a = nodeById.get(edge.fromNodeId)
         const b = nodeById.get(edge.toNodeId)
         if (!a || !b) return null

@@ -4,7 +4,6 @@ import { useMap } from "#/lib/map-context"
 import { getToolMeta } from "#/lib/tool-registry"
 import { cn } from "@/lib/utils"
 
-import { ConnectEdgeActions } from "./connect-edge-actions"
 import { DrawNodeActions } from "./draw-node-actions"
 import { DrawRoomActions } from "./draw-room-actions"
 import { PillButton, PillDivider } from "./pill-button"
@@ -37,8 +36,6 @@ export const ActionBar = ({ className }: ActionBarProps) => {
       <DrawRoomActions drawing={drawing} />
     ) : activeTool === "draw-node" ? (
       <DrawNodeActions />
-    ) : activeTool === "connect-edge" ? (
-      <ConnectEdgeActions />
     ) : null
 
   return (
