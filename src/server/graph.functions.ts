@@ -16,6 +16,7 @@ import {
   deleteEdgeByIdInDb,
   deactivateEdgeByIdinDb,
   activateEdgeByIdInDb,
+  createTransitNodesInDb,
 } from "./graph.server"
 
 const nodeTypeEnum = z.enum(Object.values(NodeType) as [string, ...string[]])
@@ -142,4 +143,28 @@ export const activateEdgeData = createServerFn({ method: "POST" })
   .inputValidator(edgeIdSchema)
   .handler(async ({ data }) => {
     return await activateEdgeByIdInDb(data.id)
+  })
+
+const createTransitNodesSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  z: z.number(),
+  type: z.enum(["STAIR", "ELEVATOR"]),
+  floors: z.array(z.number().int()).min(1),
+  isActivated: z.boolean().optional(),
+  roomId: z.string().optional(),
+})
+
+export const createTransitNodesData = createServerFn({ method: "POST" })
+  .inputValidator(createTransitNodesSchema)
+  .handler(async ({ data }) => {
+    return await createTransitNodesInDb({
+      x: data.x,
+      y: data.y,
+      z: data.z,
+      type: data.type,
+      floors: data.floors,
+      isActivated: data.isActivated ?? true,
+      roomId: data.roomId,
+    })
   })

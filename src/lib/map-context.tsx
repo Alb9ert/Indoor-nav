@@ -75,7 +75,6 @@ interface MapContextValue {
   /** The edge currently selected for viewing/deletion in connect-edge mode. */
   editingEdgeId: string | null
   setEditingEdgeId: (id: string | null) => void
-
   /**
    * The room currently being viewed in the end-user info drawer, or null.
    * Set when a user clicks a room outside of any editing tool. Mutually

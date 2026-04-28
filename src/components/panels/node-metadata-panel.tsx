@@ -1,7 +1,7 @@
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Trash2, X } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { Button } from "#/components/ui/button"
 import { Input } from "#/components/ui/input"
@@ -18,9 +18,13 @@ import { useMap } from "#/lib/map-context"
 import { cn } from "#/lib/utils"
 import {
   activateNodeData,
+  addEdgeData,
   addNodeData,
+  createTransitNodesData,
   deactivateNodeData,
+  deleteEdgeData,
   deleteNodeData,
+  getAllEdgesData,
   getAllNodesData,
   updateNodeData,
 } from "#/server/graph.functions"
@@ -98,8 +102,11 @@ const MutationError = ({ error, fallback }: { error: unknown; fallback: string }
 // Create form — opens when the user clicks an empty spot on the canvas.
 // ─────────────────────────────────────────────────────────────────────────────
 
+const TRANSIT_TYPES = new Set<NodeType>(["STAIR", "ELEVATOR"])
+const FLOOR_HEIGHT_METERS = 3.25
+
 const NodeCreateForm = () => {
-  const { pendingNode, setPendingNode } = useMap()
+  const { pendingNode, setPendingNode, floors } = useMap()
   const queryClient = useQueryClient()
 
   const [xText, setXText] = useState(() => (pendingNode?.x ?? 0).toFixed(2))
@@ -107,6 +114,7 @@ const NodeCreateForm = () => {
   const myXRef = useRef(pendingNode?.x ?? 0)
   const myYRef = useRef(pendingNode?.y ?? 0)
   const [prevPendingNode, setPrevPendingNode] = useState(pendingNode)
+  const [extraFloors, setExtraFloors] = useState<number[]>([])
 
   // Sync text inputs when pendingNode changes from an external source (map click).
   // This uses React's "adjust state on render" pattern instead of useEffect.
@@ -132,6 +140,20 @@ const NodeCreateForm = () => {
   const mutation = useMutation({
     mutationFn: async (values: { type: NodeType; isActivated: boolean }) => {
       if (!pendingNode) throw new Error("No position selected")
+      const allFloors = [pendingNode.floor, ...extraFloors]
+      if (TRANSIT_TYPES.has(values.type) && allFloors.length > 1) {
+        return await createTransitNodesData({
+          data: {
+            x: pendingNode.x,
+            y: pendingNode.y,
+            z: pendingNode.z,
+            type: values.type as "STAIR" | "ELEVATOR",
+            floors: allFloors,
+            isActivated: values.isActivated,
+            roomId: pendingNode.roomId,
+          },
+        })
+      }
       return await addNodeData({
         data: {
           x: pendingNode.x,
@@ -147,6 +169,7 @@ const NodeCreateForm = () => {
     onSuccess: () => {
       setPendingNode(null)
       void queryClient.invalidateQueries({ queryKey: ["nodes"] })
+      void queryClient.invalidateQueries({ queryKey: ["edges"] })
     },
   })
 
@@ -228,32 +251,79 @@ const NodeCreateForm = () => {
 
         <form.Field name="type">
           {(field) => (
-            <FieldWrapper htmlFor={field.name} label="Node type">
-              <Select
-                value={field.state.value}
-                onValueChange={(v) => {
-                  if (v) {
-                    field.handleChange(v)
-                    mutation.reset()
-                  }
-                }}
-              >
-                <SelectTrigger className="w-full bg-background text-black">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent className="bg-background text-black">
-                  {nodeTypes.map((t) => (
-                    <SelectItem
-                      className="focus:bg-sidebar-primary/40 cursor-pointer"
-                      key={t}
-                      value={t}
-                    >
-                      {NODE_TYPE_LABELS[t]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FieldWrapper>
+            <>
+              <FieldWrapper htmlFor={field.name} label="Node type">
+                <Select
+                  value={field.state.value}
+                  onValueChange={(v) => {
+                    if (v) {
+                      field.handleChange(v)
+                      mutation.reset()
+                      if (!TRANSIT_TYPES.has(v)) setExtraFloors([])
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full bg-background text-black">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background text-black">
+                    {nodeTypes.map((t) => (
+                      <SelectItem
+                        className="focus:bg-sidebar-primary/40 cursor-pointer"
+                        key={t}
+                        value={t}
+                      >
+                        {NODE_TYPE_LABELS[t]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FieldWrapper>
+
+              {TRANSIT_TYPES.has(field.state.value) && floors.length > 1 && (
+                <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+                  <div>
+                    <Label>Place on multiple floors</Label>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      A {NODE_TYPE_LABELS[field.state.value]} node at this position will be created
+                      on each checked floor.
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {floors
+                      .sort((a, b) => a.floor - b.floor)
+                      .map((f) => {
+                        const isCurrent = f.floor === pendingNode?.floor
+                        const checked = isCurrent || extraFloors.includes(f.floor)
+                        return (
+                          <label
+                            key={f.floor}
+                            className={cn(
+                              "flex items-center gap-2 text-sm",
+                              isCurrent ? "cursor-not-allowed opacity-60" : "cursor-pointer",
+                            )}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={isCurrent}
+                              onChange={() => {
+                                setExtraFloors((prev) =>
+                                  checked ? prev.filter((n) => n !== f.floor) : [...prev, f.floor],
+                                )
+                              }}
+                            />
+                            Floor {f.floor}
+                            {isCurrent && (
+                              <span className="text-xs text-muted-foreground">— this floor</span>
+                            )}
+                          </label>
+                        )
+                      })}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </form.Field>
 
@@ -393,6 +463,61 @@ const NodeEditForm = ({ nodeId }: { nodeId: string }) => {
     }
   }, [form])
 
+  const { data: allEdges = [] } = useQuery({
+    queryKey: ["edges"],
+    queryFn: getAllEdgesData,
+  })
+
+  // Co-located nodes: same type within 0.1 m XY
+  const groupNodes = useMemo(() => {
+    if (!node || !TRANSIT_TYPES.has(node.type)) return []
+    return allNodes.filter(
+      (n) => n.type === node.type && Math.hypot(n.x - node.x, n.y - node.y) < 0.1,
+    )
+  }, [allNodes, node])
+
+  const groupByFloor = useMemo(() => new Map(groupNodes.map((n) => [n.floor, n])), [groupNodes])
+
+  const groupNodeIds = useMemo(() => new Set(groupNodes.map((n) => n.id)), [groupNodes])
+
+  // Edges that run between co-located nodes only
+  const transitEdges = useMemo(
+    () => allEdges.filter((e) => groupNodeIds.has(e.fromNodeId) && groupNodeIds.has(e.toNodeId)),
+    [allEdges, groupNodeIds],
+  )
+
+  const findDirectEdge = (id1: string, id2: string) =>
+    transitEdges.find(
+      (e) =>
+        (e.fromNodeId === id1 && e.toNodeId === id2) ||
+        (e.fromNodeId === id2 && e.toNodeId === id1),
+    )
+
+  const transitMutation = useMutation({
+    mutationFn: async ({ connect, floor }: { connect: boolean; floor: number }) => {
+      if (!node) return
+      const floorNode = groupByFloor.get(floor)
+      if (!floorNode) return
+
+      if (connect) {
+        await addEdgeData({
+          data: {
+            fromNodeId: node.id,
+            toNodeId: floorNode.id,
+            distance: FLOOR_HEIGHT_METERS * Math.abs(floor - node.floor),
+            isActivated: node.isActivated,
+          },
+        })
+      } else {
+        const existing = findDirectEdge(node.id, floorNode.id)
+        if (existing) await deleteEdgeData({ data: { id: existing.id } })
+      }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["edges"] })
+    },
+  })
+
   if (!node) return null
 
   const handleClose = () => {
@@ -502,6 +627,60 @@ const NodeEditForm = ({ nodeId }: { nodeId: string }) => {
             </FieldWrapper>
           )}
         </form.Field>
+
+        {TRANSIT_TYPES.has(node.type) && groupNodes.length > 1 && (
+          <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+            <div>
+              <Label>Connections to other floors</Label>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Check a floor to add a direct edge from this node to the{" "}
+                {NODE_TYPE_LABELS[node.type]} node there. Uncheck to remove it.
+              </p>
+            </div>
+            <div className="flex flex-col gap-1">
+              {[...groupByFloor.keys()]
+                .filter((floor) => floor !== node.floor)
+                .sort((a, b) => a - b)
+                .map((floor) => {
+                  const floorNode = groupByFloor.get(floor)
+                  if (!floorNode) return null
+                  const isConnected = !!findDirectEdge(node.id, floorNode.id)
+                  return (
+                    <label
+                      key={floor}
+                      className={cn(
+                        "flex items-center gap-2 text-sm",
+                        transitMutation.isPending
+                          ? "cursor-not-allowed opacity-50"
+                          : "cursor-pointer",
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isConnected}
+                        disabled={transitMutation.isPending}
+                        onChange={() => {
+                          transitMutation.mutate({ connect: !isConnected, floor })
+                        }}
+                      />
+                      Floor {floor}
+                      <span
+                        className={cn(
+                          "text-xs",
+                          isConnected ? "text-green-500" : "text-muted-foreground",
+                        )}
+                      >
+                        {isConnected ? "— connected" : "— no edge"}
+                      </span>
+                    </label>
+                  )
+                })}
+            </div>
+            {transitMutation.isError && (
+              <MutationError error={transitMutation.error} fallback="Failed to update connection" />
+            )}
+          </div>
+        )}
 
         {updateMutation.isError && (
           <MutationError error={updateMutation.error} fallback="Failed to save" />

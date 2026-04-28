@@ -3,6 +3,8 @@ import { prisma } from "#/db"
 import type { Node, Edge } from "#/generated/prisma/client"
 import type { EdgeCreateInput, NodeCreateInput } from "#/generated/prisma/models"
 
+const FLOOR_HEIGHT_METERS = 3.25
+
 let graph: Graph | null = null
 
 export class Graph {
@@ -322,4 +324,49 @@ export const activateEdgeByIdInDb = async (edgeId: Edge["id"]) => {
   g.activateEdgeByNodeIds(updated.fromNodeId, updated.toNodeId)
 
   return updated
+}
+
+export const createTransitNodesInDb = async (input: {
+  x: number
+  y: number
+  z: number
+  type: "STAIR" | "ELEVATOR"
+  floors: number[]
+  isActivated: boolean
+  roomId?: string
+}): Promise<{ nodeIds: string[]; edgeIds: string[] }> => {
+  const { x, y, z, type, floors, isActivated, roomId } = input
+  const sorted = [...floors].sort((a, b) => a - b)
+
+  const createdNodes = await Promise.all(
+    sorted.map((floor) =>
+      addNodeInDb({
+        x,
+        y,
+        z,
+        type,
+        isActivated,
+        floorPlan: { connect: { floor } },
+        ...(roomId ? { room: { connect: { id: roomId } } } : {}),
+      }),
+    ),
+  )
+
+  const createdEdges = await Promise.all(
+    createdNodes.slice(0, -1).map((fromNode, i) => {
+      const toNode = createdNodes[i + 1]
+      const floorDiff = Math.abs(sorted[i + 1] - sorted[i])
+      return addEdgeInDb({
+        distance: FLOOR_HEIGHT_METERS * floorDiff,
+        isActivated,
+        fromNode: { connect: { id: fromNode.id } },
+        toNode: { connect: { id: toNode.id } },
+      })
+    }),
+  )
+
+  return {
+    nodeIds: createdNodes.map((n) => n.id),
+    edgeIds: createdEdges.map((e) => e.id),
+  }
 }
