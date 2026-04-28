@@ -67,6 +67,59 @@ const computeCentroid = (vertices: RoomVertex[]): { x: number; z: number } => {
   return { x: sumX / n, z: sumZ / n }
 }
 
+const isPointInPolygon = (point: { x: number; z: number }, vertices: RoomVertex[]): boolean => {
+  // Ray-casting algorithm in XZ plane.
+  let inside = false
+  for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+    const xi = vertices[i].x
+    const zi = vertices[i].z
+    const xj = vertices[j].x
+    const zj = vertices[j].z
+
+    const intersects = zi > point.z !== zj > point.z && point.x < ((xj - xi) * (point.z - zi)) / (zj - zi) + xi
+    if (intersects) inside = !inside
+  }
+  return inside
+}
+
+const triangleArea = (a: RoomVertex, b: RoomVertex, c: RoomVertex): number =>
+  Math.abs((a.x * (b.z - c.z) + b.x * (c.z - a.z) + c.x * (a.z - b.z)) / 2)
+
+const triangleIncenter = (a: RoomVertex, b: RoomVertex, c: RoomVertex): { x: number; z: number } => {
+  const sideA = Math.hypot(b.x - c.x, b.z - c.z)
+  const sideB = Math.hypot(a.x - c.x, a.z - c.z)
+  const sideC = Math.hypot(a.x - b.x, a.z - b.z)
+  const p = sideA + sideB + sideC
+  if (p === 0) return { x: a.x, z: a.z }
+  return {
+    x: (sideA * a.x + sideB * b.x + sideC * c.x) / p,
+    z: (sideA * a.z + sideB * b.z + sideC * c.z) / p,
+  }
+}
+
+const computeIconAnchor = (vertices: RoomVertex[]): { x: number; z: number } => {
+  const centroid = computeCentroid(vertices)
+  if (isPointInPolygon(centroid, vertices)) return centroid
+
+  const contour = vertices.map((v) => new THREE.Vector2(v.x, v.z))
+  const triangles = THREE.ShapeUtils.triangulateShape(contour, [])
+
+  let bestPoint = centroid
+  let bestArea = -1
+
+  for (const tri of triangles) {
+    const a = vertices[tri[0]]
+    const b = vertices[tri[1]]
+    const c = vertices[tri[2]]
+    const area = triangleArea(a, b, c)
+    if (area <= bestArea) continue
+    bestArea = area
+    bestPoint = triangleIncenter(a, b, c)
+  }
+
+  return bestPoint
+}
+
 interface RoomPolygonProps {
   room: PersistedRoom
   active: boolean
@@ -105,13 +158,13 @@ const RoomPolygon = ({
   const fillColor = useMemo(() => getRoomTypeMeta(room.type).color, [room.type])
   const TypeIcon = useMemo(() => getRoomTypeMeta(room.type).icon, [room.type])
   const outlineColor = useMemo(() => getRoomTypeOutline(room.type), [room.type])
-  const centroid = useMemo(() => computeCentroid(room.vertices), [room.vertices])
+  const iconAnchor = useMemo(() => computeIconAnchor(room.vertices), [room.vertices])
 
   const yFill = room.floor * FLOOR_HEIGHT + DRAWING_LIFT
   const yOutline = yFill + OUTLINE_LIFT
   const iconPosition = useMemo(
-    () => new THREE.Vector3(centroid.x, yOutline, centroid.z),
-    [centroid.x, centroid.z, yOutline],
+    () => new THREE.Vector3(iconAnchor.x, yOutline, iconAnchor.z),
+    [iconAnchor.x, iconAnchor.z, yOutline],
   )
 
   // Outline points (open ring) projected to 3D at the outline Y level.
@@ -182,7 +235,7 @@ const RoomPolygon = ({
       </mesh>
       <EdgePreview points={outlinePoints} color={outlineColor} lineWidth={OUTLINE_WIDTH} closed />
       {active && roomOverlayMode === "icon" && iconVisible && (
-        <Html position={[centroid.x, yOutline, centroid.z]} center zIndexRange={[0, 0]}>
+        <Html position={[iconAnchor.x, yOutline, iconAnchor.z]} center zIndexRange={[0, 0]}>
           <div className="pointer-events-none rounded-full bg-black/60 p-1.5 text-white">
             <TypeIcon className="size-4" />
           </div>

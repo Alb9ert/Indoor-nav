@@ -65,7 +65,7 @@ export const ROOM_TYPE_META: Record<RoomType, RoomTypeMeta> = {
   QUIET_ROOM: { label: "Quiet room", color: "#c4b5fd", icon: Moon },
 
   // Common areas
-  CORRIDOR: { label: "Corridor / hallway", color: "#94a3b8", icon: DoorOpen },
+  CORRIDOR: { label: "Corridor / hallway", color: "#ffffff", icon: DoorOpen },
   LOUNGE: { label: "Lounge / common area", color: "#f97316", icon: Sofa },
   KITCHEN: { label: "Kitchen / kitchenette", color: "#fb923c", icon: Coffee },
   CANTEEN: { label: "Canteen / cafeteria", color: "#f59e0b", icon: UtensilsCrossed },
