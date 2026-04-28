@@ -97,9 +97,93 @@ const triangleIncenter = (a: RoomVertex, b: RoomVertex, c: RoomVertex): { x: num
   }
 }
 
+const pointToSegmentDistance = (
+  point: { x: number; z: number },
+  start: RoomVertex,
+  end: RoomVertex,
+): number => {
+  const dx = end.x - start.x
+  const dz = end.z - start.z
+  const lengthSquared = dx * dx + dz * dz
+
+  if (lengthSquared === 0) {
+    return Math.hypot(point.x - start.x, point.z - start.z)
+  }
+
+  const t = Math.max(
+    0,
+    Math.min(1, ((point.x - start.x) * dx + (point.z - start.z) * dz) / lengthSquared),
+  )
+  const closestX = start.x + t * dx
+  const closestZ = start.z + t * dz
+  return Math.hypot(point.x - closestX, point.z - closestZ)
+}
+
+const minDistanceToPolygonEdges = (point: { x: number; z: number }, vertices: RoomVertex[]): number => {
+  let minDistance = Number.POSITIVE_INFINITY
+  for (let i = 0; i < vertices.length; i++) {
+    const start = vertices[i]
+    const end = vertices[(i + 1) % vertices.length]
+    const distance = pointToSegmentDistance(point, start, end)
+    if (distance < minDistance) {
+      minDistance = distance
+    }
+  }
+  return minDistance
+}
+
+const findPaddedInteriorPoint = (
+  initialPoint: { x: number; z: number },
+  vertices: RoomVertex[],
+): { x: number; z: number } => {
+  const xs = vertices.map((v) => v.x)
+  const zs = vertices.map((v) => v.z)
+  const width = Math.max(...xs) - Math.min(...xs)
+  const height = Math.max(...zs) - Math.min(...zs)
+  const maxSpan = Math.max(width, height)
+  if (maxSpan <= 0) return initialPoint
+
+  // Hill-climb toward better edge clearance (polylabel-style refinement).
+  let best = initialPoint
+  let bestClearance = minDistanceToPolygonEdges(best, vertices)
+  let step = maxSpan / 4
+
+  while (step > 0.05) {
+    let improved = false
+    const candidates = [
+      { x: best.x + step, z: best.z },
+      { x: best.x - step, z: best.z },
+      { x: best.x, z: best.z + step },
+      { x: best.x, z: best.z - step },
+      { x: best.x + step, z: best.z + step },
+      { x: best.x + step, z: best.z - step },
+      { x: best.x - step, z: best.z + step },
+      { x: best.x - step, z: best.z - step },
+    ]
+
+    for (const candidate of candidates) {
+      if (!isPointInPolygon(candidate, vertices)) continue
+      const candidateClearance = minDistanceToPolygonEdges(candidate, vertices)
+      if (candidateClearance > bestClearance) {
+        best = candidate
+        bestClearance = candidateClearance
+        improved = true
+      }
+    }
+
+    if (!improved) {
+      step /= 2
+    }
+  }
+
+  return best
+}
+
 const computeIconAnchor = (vertices: RoomVertex[]): { x: number; z: number } => {
   const centroid = computeCentroid(vertices)
-  if (isPointInPolygon(centroid, vertices)) return centroid
+  if (isPointInPolygon(centroid, vertices)) {
+    return findPaddedInteriorPoint(centroid, vertices)
+  }
 
   const contour = vertices.map((v) => new THREE.Vector2(v.x, v.z))
   const triangles = THREE.ShapeUtils.triangulateShape(contour, [])
@@ -117,7 +201,7 @@ const computeIconAnchor = (vertices: RoomVertex[]): { x: number; z: number } => 
     bestPoint = triangleIncenter(a, b, c)
   }
 
-  return bestPoint
+  return findPaddedInteriorPoint(bestPoint, vertices)
 }
 
 interface RoomPolygonProps {
