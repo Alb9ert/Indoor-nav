@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
 import { MapPin, Navigation as NavigationIcon, X } from "lucide-react"
 
+import { Panel } from "#/components/panels/panel"
 import { Button } from "#/components/ui/button"
 import { RoomTypeBadge } from "#/components/ui/room-type-badge"
 import { useMap } from "#/lib/map-context"
-import { cn } from "#/lib/utils"
 import { getAllRoomsData } from "#/server/room.functions"
 
 import type { PersistedRoom } from "#/server/room.server"
@@ -37,7 +37,7 @@ interface RoomInfoBodyProps {
 }
 
 const RoomInfoBody = ({ room, onClose }: RoomInfoBodyProps) => (
-  <div className="flex h-full flex-col text-popover-foreground">
+  <div className="flex min-h-0 flex-1 flex-col text-popover-foreground">
     <header className="flex items-start justify-between gap-3 p-5 pb-3">
       <div className="flex flex-col gap-2">
         <RoomTypeBadge type={room.type} variant="pill" />
@@ -56,7 +56,7 @@ const RoomInfoBody = ({ room, onClose }: RoomInfoBodyProps) => (
       </Button>
     </header>
 
-    <div className="flex flex-col gap-4 border-t border-white/10 px-5 py-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto border-t border-white/10 px-5 py-4">
       {room.address !== undefined && <DetailRow label="Address" value={room.address} />}
       {room.faculty !== undefined && <DetailRow label="Faculty" value={room.faculty} />}
       {room.department !== undefined && <DetailRow label="Department" value={room.department} />}
@@ -71,7 +71,7 @@ const RoomInfoBody = ({ room, onClose }: RoomInfoBodyProps) => (
       />
     </div>
 
-    <footer className="mt-auto flex flex-col gap-2 border-t border-white/10 p-5">
+    <footer className="flex flex-col gap-2 border-t border-white/10 p-5">
       <Button type="button" className="gap-2">
         <NavigationIcon className="size-4" />
         Start navigation
@@ -103,19 +103,7 @@ export const RoomInfoPanel = () => {
   const open = room != null
 
   return (
-    <aside
-      aria-hidden={!open}
-      className={cn(
-        "fixed z-30 bg-popover text-popover-foreground shadow-2xl transition-transform duration-300 ease-in-out",
-        // mobile: bottom sheet
-        "inset-x-0 bottom-0 max-h-[80vh] rounded-t-2xl border-t border-border",
-        // desktop: right side panel
-        "md:inset-x-auto md:bottom-auto md:top-0 md:right-0 md:h-full md:max-h-none md:w-96 md:rounded-t-none md:border-t-0 md:border-l",
-        open
-          ? "translate-y-0 md:translate-x-0"
-          : "translate-y-full md:translate-y-0 md:translate-x-full pointer-events-none",
-      )}
-    >
+    <Panel open={open}>
       {room && (
         <RoomInfoBody
           room={room}
@@ -124,6 +112,6 @@ export const RoomInfoPanel = () => {
           }}
         />
       )}
-    </aside>
+    </Panel>
   )
 }

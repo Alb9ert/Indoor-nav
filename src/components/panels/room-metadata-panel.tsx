@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Trash2, X } from "lucide-react"
 import { useState } from "react"
 
+import { Panel } from "#/components/panels/panel"
 import { Button } from "#/components/ui/button"
 import { Input } from "#/components/ui/input"
 import { Label } from "#/components/ui/label"
@@ -16,7 +17,6 @@ import {
 } from "#/components/ui/select"
 import { useMap } from "#/lib/map-context"
 import { ROOM_TYPES } from "#/lib/room-types"
-import { cn } from "#/lib/utils"
 import {
   createRoomData,
   deleteRoomData,
@@ -144,7 +144,7 @@ const RoomCreateForm = () => {
 
   return (
     <form
-      className="flex h-full flex-col"
+      className="flex min-h-0 flex-1 flex-col"
       onSubmit={(e) => {
         e.preventDefault()
         void form.handleSubmit()
@@ -156,7 +156,7 @@ const RoomCreateForm = () => {
         onClose={handleClose}
       />
 
-      <div className="flex flex-1 flex-col gap-4 px-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4">
         <form.Field
           name="roomNumber"
           validators={{ onChange: ({ value }) => requiredString("Room number")(value) }}
@@ -336,7 +336,7 @@ const RoomEditForm = ({ room }: RoomEditFormProps) => {
 
   return (
     <form
-      className="flex h-full flex-col"
+      className="flex min-h-0 flex-1 flex-col"
       onSubmit={(e) => {
         e.preventDefault()
         void form.handleSubmit()
@@ -348,7 +348,7 @@ const RoomEditForm = ({ room }: RoomEditFormProps) => {
         onClose={handleClose}
       />
 
-      <div className="flex flex-1 flex-col gap-4 px-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4">
         <form.Field
           name="roomNumber"
           validators={{ onChange: ({ value }) => requiredString("Room number")(value) }}
@@ -532,19 +532,12 @@ export const RoomMetadataPanel = () => {
   const open = drawing.closed || editingRoom !== null
 
   return (
-    <aside
-      aria-hidden={!open}
-      className={cn(
-        "fixed top-0 right-0 z-30 flex h-full w-88 flex-col border-l border-border bg-popover text-popover-foreground shadow-2xl",
-        "transition-transform duration-300 ease-in-out",
-        open ? "translate-x-0" : "translate-x-full pointer-events-none",
-      )}
-    >
+    <Panel open={open}>
       {editingRoom ? (
         <RoomEditForm key={editingRoom.id} room={editingRoom} />
       ) : drawing.closed ? (
         <RoomCreateForm />
       ) : null}
-    </aside>
+    </Panel>
   )
 }

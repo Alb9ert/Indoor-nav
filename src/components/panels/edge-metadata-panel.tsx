@@ -2,9 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Trash2, X } from "lucide-react"
 import { useState } from "react"
 
+import { Panel } from "#/components/panels/panel"
 import { Button } from "#/components/ui/button"
 import { useMap } from "#/lib/map-context"
-import { cn } from "#/lib/utils"
 import { deleteEdgeData, getAllEdgesData, getAllNodesData } from "#/server/graph.functions"
 
 const EdgePanel = ({ edgeId }: { edgeId: string }) => {
@@ -38,7 +38,7 @@ const EdgePanel = ({ edgeId }: { edgeId: string }) => {
     `Floor ${floor} · (${x.toFixed(2)}, ${y.toFixed(2)})`
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <header className="flex items-start justify-between gap-2 p-4">
         <div>
           <h2 className="text-lg font-semibold">Edge</h2>
@@ -55,7 +55,7 @@ const EdgePanel = ({ edgeId }: { edgeId: string }) => {
         </Button>
       </header>
 
-      <div className="flex flex-1 flex-col gap-4 px-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4">
         <div className="flex flex-col gap-3 rounded-lg border border-border p-3 text-sm">
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">From</span>
@@ -133,15 +133,8 @@ export const EdgeMetadataPanel = () => {
   const open = editingEdgeId !== null
 
   return (
-    <aside
-      aria-hidden={!open}
-      className={cn(
-        "fixed top-0 right-0 z-30 flex h-full w-88 flex-col border-l border-border bg-popover text-popover-foreground shadow-2xl",
-        "transition-transform duration-300 ease-in-out",
-        open ? "translate-x-0" : "translate-x-full pointer-events-none",
-      )}
-    >
+    <Panel open={open}>
       {editingEdgeId && <EdgePanel key={editingEdgeId} edgeId={editingEdgeId} />}
-    </aside>
+    </Panel>
   )
 }
