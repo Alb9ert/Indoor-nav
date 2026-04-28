@@ -20,6 +20,13 @@ interface PanelProps {
   children: ReactNode
   /** Called when the user clicks the built-in close button. Omit to hide it. */
   onClose?: () => void
+  /**
+   * When true, the panel always fills the entire viewport height — no drag
+   * handle, no collapsed/expanded snaps. The body scrolls if it overflows.
+   * Use for panels (like navigation) where partial height adds friction
+   * rather than discoverability.
+   */
+  fullHeight?: boolean
 }
 
 /**
@@ -36,7 +43,14 @@ interface PanelProps {
  * Snap points: collapsed (header + footer only) and expanded (full content,
  * up to the viewport cap). Releasing the drag picks the nearest.
  */
-export const Panel = ({ open, header, footer, children, onClose }: PanelProps) => {
+export const Panel = ({
+  open,
+  header,
+  footer,
+  children,
+  onClose,
+  fullHeight = false,
+}: PanelProps) => {
   const isMobile = useIsMobile()
   const handleRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLDivElement>(null)
@@ -83,6 +97,7 @@ export const Panel = ({ open, header, footer, children, onClose }: PanelProps) =
   }
 
   const currentHeight = heightPx ?? collapsedPx
+  const useDragSheet = isMobile && !fullHeight
 
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     dragRef.current = { startY: e.clientY, startHeight: currentHeight }
@@ -108,30 +123,32 @@ export const Panel = ({ open, header, footer, children, onClose }: PanelProps) =
   return (
     <aside
       aria-hidden={!open}
-      style={isMobile ? { height: `${currentHeight}px` } : undefined}
+      style={useDragSheet ? { height: `${currentHeight}px` } : undefined}
       className={cn(
         "fixed z-30 flex flex-col overflow-hidden bg-popover text-popover-foreground shadow-2xl",
         "transition-transform duration-300 ease-in-out",
         !dragging && "transition-[transform,height]",
-        // mobile: bottom sheet
-        "inset-x-0 bottom-0 rounded-t-2xl border-t border-border",
-        // desktop: right-anchored full-height
-        "md:inset-x-auto md:bottom-auto md:top-0 md:right-0 md:h-full md:w-88 md:rounded-t-none md:border-t-0 md:border-l",
+        // mobile shape — drag-sheet anchors to the bottom; full-height covers the viewport
+        useDragSheet ? "inset-x-0 bottom-0 rounded-t-2xl border-t border-border" : "inset-0",
+        // desktop: right-anchored full-height (overrides the mobile shape)
+        "md:inset-x-auto md:bottom-auto md:top-0 md:right-0 md:h-full md:w-88 md:rounded-none md:border-l",
         open
           ? "translate-y-0 md:translate-x-0"
           : "pointer-events-none translate-y-full md:translate-y-0 md:translate-x-full",
       )}
     >
-      <div
-        ref={handleRef}
-        className="flex shrink-0 cursor-grab touch-none items-center justify-center py-2 active:cursor-grabbing md:hidden"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-      >
-        <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
-      </div>
+      {useDragSheet && (
+        <div
+          ref={handleRef}
+          className="flex shrink-0 cursor-grab touch-none items-center justify-center py-2 active:cursor-grabbing md:hidden"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
+          <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+        </div>
+      )}
       <div ref={headerRef} className="relative shrink-0">
         {header}
         {onClose && (
@@ -154,7 +171,9 @@ export const Panel = ({ open, header, footer, children, onClose }: PanelProps) =
           // Only enable scroll when the visible body area is actually shorter
           // than its content. Otherwise touch jitter can scroll a panel that
           // already fits perfectly.
-          isMobile && currentHeight - chromePx >= contentPx ? "overflow-hidden" : "overflow-y-auto",
+          useDragSheet && currentHeight - chromePx >= contentPx
+            ? "overflow-hidden"
+            : "overflow-y-auto",
         )}
       >
         {children}

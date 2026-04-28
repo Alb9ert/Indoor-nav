@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search } from "lucide-react"
+import { Search, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SearchResultList, type SearchResultItem } from "./search-result-list"
 
@@ -13,6 +13,8 @@ interface SearchBarBaseProps {
   onQueryChange?: (query: string) => void
   /** Called when the search icon / Enter key is pressed (both modes) */
   onSearch?: (query: string) => void
+  /** Called when the input gains focus */
+  onFocus?: () => void
   className?: string
   /** Initial / controlled value */
   value?: string
@@ -35,7 +37,25 @@ interface SearchBarIntegratedProps extends SearchBarBaseProps {
   showResultsWhenEmpty?: boolean
 }
 
-export type SearchBarProps = SearchBarStandaloneProps | SearchBarIntegratedProps
+/**
+ * Field bar – integrated styling (rounded pill) with a customizable leading
+ * icon and no internal dropdown. Use when results are rendered elsewhere
+ * (e.g. in a panel body shared between multiple field instances).
+ */
+interface SearchBarFieldProps extends SearchBarBaseProps {
+  type: "field"
+  /** Leading icon. Defaults to a Search icon. */
+  leadingIcon?: React.ReactNode
+  /** Show a focus ring even when blurred (e.g. while this field owns the active search). */
+  active?: boolean
+  /** When set, renders a trailing X that calls this on click. */
+  onClear?: () => void
+}
+
+export type SearchBarProps =
+  | SearchBarStandaloneProps
+  | SearchBarIntegratedProps
+  | SearchBarFieldProps
 
 // ─── SearchBar ────────────────────────────────────────────────────────────────
 
@@ -88,6 +108,55 @@ export function SearchBar(props: SearchBarProps) {
     }
   }
 
+  // ── Field mode (rounded pill, custom leading icon, no dropdown) ─────────
+
+  if (props.type === "field") {
+    const { leadingIcon, active, onFocus, onClear } = props
+    return (
+      <div
+        className={cn(
+          "flex items-center gap-3 px-4 py-3",
+          "bg-card rounded-full shadow-md border border-border/60",
+          active && "ring-2 ring-primary/60",
+          className,
+        )}
+      >
+        {leadingIcon ?? (
+          <Search className="w-5 h-5 text-muted-foreground shrink-0" aria-hidden="true" />
+        )}
+        <input
+          type="search"
+          value={query}
+          onChange={handleChange}
+          onFocus={() => {
+            setIsFocused(true)
+            onFocus?.()
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          aria-label={inputAriaLabel ?? placeholder}
+          className={cn(
+            "flex-1 min-w-0 bg-transparent text-card-foreground",
+            "placeholder:text-muted-foreground",
+            "text-base leading-6",
+            "focus:outline-none",
+            "[&::-webkit-search-cancel-button]:hidden",
+          )}
+        />
+        {onClear && query.length > 0 && (
+          <button
+            type="button"
+            onClick={onClear}
+            aria-label="Clear"
+            className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <X className="w-4 h-4" aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    )
+  }
+
   // ── Integrated mode (rounded, dropdown overlays content) ─────────────────
 
   if (props.type === "integrated") {
@@ -112,7 +181,10 @@ export function SearchBar(props: SearchBarProps) {
               type="search"
               value={query}
               onChange={handleChange}
-              onFocus={() => setIsFocused(true)}
+              onFocus={() => {
+                setIsFocused(true)
+                props.onFocus?.()
+              }}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
               aria-label={inputAriaLabel ?? placeholder}

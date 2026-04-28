@@ -10,6 +10,7 @@ import { FloorSelector } from "#/components/map/user-tools/floor-selector"
 import { RenderModeToggle } from "#/components/map/user-tools/render-mode-toggle"
 import { RoomOverlayToggle } from "#/components/map/user-tools/room-overlay-toggle"
 import { EdgePanel } from "#/components/panels/edge/edge-panel"
+import { NavigationPanel } from "#/components/panels/navigation/navigation-panel"
 import { NodePanels } from "#/components/panels/node/node-panels"
 import { RoomInfoPanel } from "#/components/panels/room/room-info-panel"
 import { RoomPanels } from "#/components/panels/room/room-panels"
@@ -18,6 +19,7 @@ import { buttonVariants } from "#/components/ui/button"
 import { TooltipProvider } from "#/components/ui/tooltip"
 import { useIsLoggedIn } from "#/lib/auth-hooks"
 import { MapProvider, useMap } from "#/lib/map-context"
+import { NavigationProvider } from "#/lib/navigation-context"
 
 /**
  * Layout structure (z-stack from bottom to top):
@@ -76,15 +78,18 @@ const Layout = () => {
         </>
       )}
       <RoomInfoPanel />
+      <NavigationPanel />
     </main>
   )
 }
 
 const App = () => (
   <TooltipProvider>
-    <MapProvider>
-      <Layout />
-    </MapProvider>
+    <NavigationProvider>
+      <MapProvider>
+        <Layout />
+      </MapProvider>
+    </NavigationProvider>
   </TooltipProvider>
 )
 

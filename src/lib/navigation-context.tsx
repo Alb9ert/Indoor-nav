@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo, useState } from "react"
 
-import type { Room, Node } from "#/generated/prisma/client"
+import type { Node } from "#/generated/prisma/client"
+import type { PersistedRoom } from "#/server/room.server"
 
 export const routePreferences = {
   SIMPLE: "simple",
@@ -10,8 +11,8 @@ export const routePreferences = {
 
 export interface NavigationRequest {
   preference: keyof typeof routePreferences
-  start: Node | { x: number; y: number; z: number; floor: number }
-  destination: Room
+  start: Node | { x: number; y: number; z: number; floor: number } | PersistedRoom
+  destination: PersistedRoom
 }
 
 interface NavigationContextValue {
