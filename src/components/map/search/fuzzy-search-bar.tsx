@@ -9,7 +9,7 @@ import type { SearchResultItem } from "#/components/ui/search-result-list"
 
 type SearchResultItemWithDbId = SearchResultItem & { dbId: string }
 
-export const FuzzySearchBar = () => {
+export const FuzzySearchBar = ({ className }: { className?: string }) => {
   const { setViewingRoomId, setEditingRoomId, activeTool } = useMap()
   const [query, setQuery] = useState("")
   const { results, isLoading } = useFuzzySearch(query)
@@ -25,7 +25,7 @@ export const FuzzySearchBar = () => {
           id: r.item.roomNumber,
           icon: <Icon className="w-5 h-5" style={{ color: outline }} />,
           iconBgStyle: { backgroundColor: meta.color, outline: `2px solid ${outline}` },
-          title: r.item.displayName || "",
+          title: r.item.displayName ?? "",
           type: meta.label,
           dbId: r.item.id,
         }
@@ -46,7 +46,7 @@ export const FuzzySearchBar = () => {
 
   return (
     <SearchBar
-      className="absolute top-4 left-4 right-4 w-auto z-10 sm:left-30 sm:right-auto sm:w-90"
+      className={className}
       type="integrated"
       placeholder="Search locations..."
       value={query}
