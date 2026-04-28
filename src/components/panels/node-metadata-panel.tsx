@@ -259,7 +259,7 @@ const NodeCreateForm = () => {
                     if (v) {
                       field.handleChange(v)
                       mutation.reset()
-                      if (!TRANSIT_TYPES.has(v as NodeType)) setExtraFloors([])
+                      if (!TRANSIT_TYPES.has(v)) setExtraFloors([])
                     }
                   }}
                 >
