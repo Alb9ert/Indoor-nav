@@ -1,52 +1,91 @@
-import { useRef, useState } from "react"
+import { X } from "lucide-react"
+import { useLayoutEffect, useRef, useState } from "react"
 
 import { useIsMobile } from "#/components/hooks/use-is-mobile"
+import { Button } from "#/components/ui/button"
 import { cn } from "#/lib/utils"
 
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react"
 
-const COLLAPSED_VH = 45
-const EXPANDED_VH = 92
-const SNAP_MIDPOINT_VH = (COLLAPSED_VH + EXPANDED_VH) / 2
+const MAX_HEIGHT_DVH = 92
 
 interface PanelProps {
   /** Whether the panel is visible. Animates in/out. */
   open: boolean
-  /** Panel content. Should be a flex column with a `flex-1 min-h-0 overflow-y-auto` body so headers/footers stay pinned while the middle scrolls. */
+  /** Sticky header. Always visible while the panel is open. */
+  header?: ReactNode
+  /** Sticky footer. Always visible while the panel is open. */
+  footer?: ReactNode
+  /** Scrollable body content. */
   children: ReactNode
-  /** Extra classes applied to the outer container. */
-  className?: string
+  /** Called when the user clicks the built-in close button. Omit to hide it. */
+  onClose?: () => void
 }
 
 /**
  * Shared overlay panel used across the map UI.
  *
- * - **Desktop (≥ md):** anchored to the right edge, full viewport height,
- *   slides in from the right.
- * - **Mobile (< md):** bottom sheet with a drag handle. Defaults to ~45vh,
- *   drag the handle up toward ~92vh.
+ * Layout (header + body + footer always rendered in that order):
+ * - **Desktop (≥ md):** anchored to the right edge, full viewport height.
+ *   Header pinned top, footer pinned bottom, body scrolls if it overflows.
+ * - **Mobile (< md):** bottom sheet. Collapsed by default to just header +
+ *   footer (body hidden). Drag the handle up to grow toward the natural
+ *   content height; if content exceeds 92dvh the sheet caps there and the
+ *   body scrolls.
  *
- * The container is `overflow-hidden` and `flex-col`, so the consumer's body
- * region can claim `flex-1 min-h-0 overflow-y-auto` and have headers/footers
- * pinned without escaping the panel.
+ * Snap points: collapsed (header + footer only) and expanded (full content,
+ * up to the viewport cap). Releasing the drag picks the nearest.
  */
-export const Panel = ({ open, children, className }: PanelProps) => {
+export const Panel = ({ open, header, footer, children, onClose }: PanelProps) => {
   const isMobile = useIsMobile()
-  const [heightVh, setHeightVh] = useState(COLLAPSED_VH)
+  const handleRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLDivElement>(null)
+  const footerRef = useRef<HTMLDivElement>(null)
+  const bodyRef = useRef<HTMLDivElement>(null)
+
+  const [chromePx, setChromePx] = useState(0)
+  const [contentPx, setContentPx] = useState(0)
+  const [heightPx, setHeightPx] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
   const [prevOpen, setPrevOpen] = useState(open)
   const dragRef = useRef<{ startY: number; startHeight: number } | null>(null)
 
-  // Reset to collapsed each time the sheet re-opens, so it doesn't reappear
-  // at whatever height the user last left it. Derived-state pattern (rather
-  // than an effect) keeps the reset in sync with the same render.
+  useLayoutEffect(() => {
+    const measure = () => {
+      const handleH = handleRef.current?.offsetHeight ?? 0
+      const headerH = headerRef.current?.offsetHeight ?? 0
+      const footerH = footerRef.current?.offsetHeight ?? 0
+      const contentH = bodyRef.current?.scrollHeight ?? 0
+      setChromePx(handleH + headerH + footerH)
+      setContentPx(contentH)
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    if (handleRef.current) ro.observe(handleRef.current)
+    if (headerRef.current) ro.observe(headerRef.current)
+    if (footerRef.current) ro.observe(footerRef.current)
+    if (bodyRef.current) ro.observe(bodyRef.current)
+    return () => {
+      ro.disconnect()
+    }
+  }, [header, footer, children])
+
+  const maxPx =
+    typeof globalThis.innerHeight === "number" ? (globalThis.innerHeight * MAX_HEIGHT_DVH) / 100 : 0
+  const collapsedPx = chromePx
+  const expandedPx = Math.min(chromePx + contentPx, maxPx)
+  const snapMidPx = (collapsedPx + expandedPx) / 2
+
+  // Reset to collapsed each time the sheet re-opens (derived-state pattern).
   if (open !== prevOpen) {
     setPrevOpen(open)
-    if (open) setHeightVh(COLLAPSED_VH)
+    if (open) setHeightPx(null)
   }
 
+  const currentHeight = heightPx ?? collapsedPx
+
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    dragRef.current = { startY: e.clientY, startHeight: heightVh }
+    dragRef.current = { startY: e.clientY, startHeight: currentHeight }
     setDragging(true)
     e.currentTarget.setPointerCapture(e.pointerId)
   }
@@ -55,8 +94,7 @@ export const Panel = ({ open, children, className }: PanelProps) => {
     const drag = dragRef.current
     if (!drag) return
     const dy = e.clientY - drag.startY
-    const dvh = drag.startHeight - (dy / globalThis.innerHeight) * 100
-    setHeightVh(Math.max(20, Math.min(95, dvh)))
+    setHeightPx(Math.max(collapsedPx, Math.min(drag.startHeight - dy, expandedPx)))
   }
 
   const handlePointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -64,13 +102,13 @@ export const Panel = ({ open, children, className }: PanelProps) => {
     dragRef.current = null
     e.currentTarget.releasePointerCapture(e.pointerId)
     setDragging(false)
-    setHeightVh((h) => (h > SNAP_MIDPOINT_VH ? EXPANDED_VH : COLLAPSED_VH))
+    setHeightPx(currentHeight > snapMidPx ? expandedPx : collapsedPx)
   }
 
   return (
     <aside
       aria-hidden={!open}
-      style={isMobile ? { height: `${heightVh}dvh` } : undefined}
+      style={isMobile ? { height: `${currentHeight}px` } : undefined}
       className={cn(
         "fixed z-30 flex flex-col overflow-hidden bg-popover text-popover-foreground shadow-2xl",
         "transition-transform duration-300 ease-in-out",
@@ -82,10 +120,10 @@ export const Panel = ({ open, children, className }: PanelProps) => {
         open
           ? "translate-y-0 md:translate-x-0"
           : "pointer-events-none translate-y-full md:translate-y-0 md:translate-x-full",
-        className,
       )}
     >
       <div
+        ref={handleRef}
         className="flex shrink-0 cursor-grab touch-none items-center justify-center py-2 active:cursor-grabbing md:hidden"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -94,7 +132,36 @@ export const Panel = ({ open, children, className }: PanelProps) => {
       >
         <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
       </div>
-      {children}
+      <div ref={headerRef} className="relative shrink-0">
+        {header}
+        {onClose && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Close"
+            onClick={onClose}
+            className="absolute top-3 right-3 text-popover-foreground hover:bg-white/10 hover:text-popover-foreground"
+          >
+            <X />
+          </Button>
+        )}
+      </div>
+      <div
+        ref={bodyRef}
+        className={cn(
+          "min-h-0 flex-1",
+          // Only enable scroll when the visible body area is actually shorter
+          // than its content. Otherwise touch jitter can scroll a panel that
+          // already fits perfectly.
+          isMobile && currentHeight - chromePx >= contentPx ? "overflow-hidden" : "overflow-y-auto",
+        )}
+      >
+        {children}
+      </div>
+      <div ref={footerRef} className="shrink-0">
+        {footer}
+      </div>
     </aside>
   )
 }
