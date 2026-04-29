@@ -5,6 +5,7 @@ import { useCallback, useMemo, useRef, useState } from "react"
 import * as THREE from "three"
 
 import { useMap } from "#/lib/map-context"
+import { pickStartNode, useRoutePlanner } from "#/lib/route-planner-store"
 import { pointStrictlyInsidePolygon } from "#/lib/polygon-validation"
 import { getAllEdgesData, getAllNodesData } from "#/server/graph.functions"
 import { getAllRoomsData } from "#/server/room.functions"
@@ -20,12 +21,14 @@ import type { FloorPlan } from "#/types/floor-plan"
 
 interface GraphLayerProps {
   floor: FloorPlan
+  readOnly?: boolean
 }
 
 const NODE_COLOR = "#3b82f6"
 const NODE_DOOR_COLOR = "#a855f7"
 const NODE_INACTIVE_COLOR = "#ef4444"
 const NODE_HIGHLIGHT_COLOR = "#f97316"
+const NODE_PATH_COLOR = "#22c55e"
 const CURSOR_COLOR = "#fbbf24"
 const SNAP_HALO_COLOR = "#fbbf24"
 
@@ -52,10 +55,15 @@ const ClickableNode = ({
   node,
   floorY,
   highlighted,
+  inPath,
+  pickStartMode,
 }: {
   node: NodeRecord
   floorY: number
   highlighted: boolean
+  inPath: boolean
+  pickStartMode: boolean
+  readOnly: boolean
 }) => {
   const { setEditingNodeId, setPendingNode } = useMap()
   const meshRef = useRef<THREE.Mesh>(null)
@@ -82,27 +90,33 @@ const ClickableNode = ({
         downRef.current = null
         if (!start) return
         if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > DRAG_THRESHOLD_PX) return
-        setPendingNode(null)
-        setEditingNodeId(node.id)
+        if (pickStartMode) {
+          pickStartNode(node.id)
+        } else if (!readOnly) {
+          setPendingNode(null)
+          setEditingNodeId(node.id)
+        }
       }}
     >
       <sphereGeometry args={[NODE_RADIUS, 32, 32]} />
       <meshBasicMaterial
         color={
-          highlighted
-            ? NODE_HIGHLIGHT_COLOR
-            : !node.isActivated
-              ? NODE_INACTIVE_COLOR
-              : node.type === "DOOR"
-                ? NODE_DOOR_COLOR
-                : NODE_COLOR
+          inPath
+            ? NODE_PATH_COLOR
+            : highlighted
+              ? NODE_HIGHLIGHT_COLOR
+              : !node.isActivated
+                ? NODE_INACTIVE_COLOR
+                : node.type === "DOOR"
+                  ? NODE_DOOR_COLOR
+                  : NODE_COLOR
         }
       />
     </mesh>
   )
 }
 
-export const GraphLayer = ({ floor }: GraphLayerProps) => {
+export const GraphLayer = ({ floor, readOnly = false }: GraphLayerProps) => {
   const {
     setPendingNode,
     setEditingNodeId,
@@ -111,6 +125,7 @@ export const GraphLayer = ({ floor }: GraphLayerProps) => {
     pendingNode,
     editingNodeId,
   } = useMap()
+  const { pickMode, pathNodeIds, startNodeId } = useRoutePlanner()
   const [cursor, setCursor] = useState<THREE.Vector3 | null>(null)
 
   const floorY = floor.floor * FLOOR_HEIGHT
@@ -205,7 +220,7 @@ export const GraphLayer = ({ floor }: GraphLayerProps) => {
 
   return (
     <>
-      <RaycastPlane floor={floor} {...handlers} />
+      {!readOnly && <RaycastPlane floor={floor} {...handlers} />}
 
       {floorEdges.map((edge) => {
         const a = nodeById.get(edge.fromNodeId)
@@ -229,11 +244,14 @@ export const GraphLayer = ({ floor }: GraphLayerProps) => {
           key={node.id}
           node={node}
           floorY={floorY}
-          highlighted={node.id === editingNodeId}
+          highlighted={node.id === editingNodeId || node.id === startNodeId}
+          inPath={pathNodeIds.has(node.id)}
+          pickStartMode={pickMode === "start"}
+          readOnly={readOnly}
         />
       ))}
 
-      {pendingNode?.floor === floor.floor && (
+      {!readOnly && pendingNode?.floor === floor.floor && (
         <VertexMarker
           position={[pendingNode.x, floorY + DRAWING_LIFT, -pendingNode.y]}
           color={NODE_HIGHLIGHT_COLOR}
@@ -241,7 +259,7 @@ export const GraphLayer = ({ floor }: GraphLayerProps) => {
         />
       )}
 
-      {snapTarget && (
+      {!readOnly && snapTarget && (
         <VertexMarker
           position={lift(snapTarget)}
           color={SNAP_HALO_COLOR}
@@ -249,7 +267,7 @@ export const GraphLayer = ({ floor }: GraphLayerProps) => {
         />
       )}
 
-      {gridSnapHighlight && (
+      {!readOnly && gridSnapHighlight && (
         <VertexMarker
           position={lift(gridSnapHighlight)}
           color={SNAP_HALO_COLOR}
@@ -257,7 +275,7 @@ export const GraphLayer = ({ floor }: GraphLayerProps) => {
         />
       )}
 
-      {landingPoint && (
+      {!readOnly && landingPoint && (
         <VertexMarker position={lift(landingPoint)} color={CURSOR_COLOR} radius={CURSOR_RADIUS} />
       )}
     </>

@@ -75,7 +75,9 @@ export const MapScene = () => {
         <CursorCoordinates />
         <RoomPolygonsLayer neighbourOpacityRef={neighbourOpacityRef} />
         {activeTool === "draw-room" && activeFloorPlan && <DrawingLayer floor={activeFloorPlan} />}
-        {activeTool === "draw-node" && activeFloorPlan && <GraphLayer floor={activeFloorPlan} />}
+        {(activeTool === "draw-node" || activeTool === "route-plan") && activeFloorPlan && (
+          <GraphLayer floor={activeFloorPlan} readOnly={activeTool === "route-plan"} />
+        )}
         {activeTool === "connect-edge" && activeFloorPlan && (
           <ConnectEdgeLayer floor={activeFloorPlan} />
         )}

@@ -22,7 +22,7 @@ type RoomOverlayMode = "icon" | "none"
  * are reserved for the next PBI (node + edge editing) so the union doesn't
  * have to change again.
  */
-export type ActiveTool = "default" | "draw-room" | "edit-room" | "draw-node" | "connect-edge"
+export type ActiveTool = "default" | "draw-room" | "edit-room" | "draw-node" | "connect-edge" | "route-plan"
 
 export interface PendingNode {
   x: number

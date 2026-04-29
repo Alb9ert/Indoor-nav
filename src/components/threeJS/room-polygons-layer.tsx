@@ -6,6 +6,7 @@ import { useCallback, useMemo, useRef, useState } from "react"
 import * as THREE from "three"
 
 import { useMap } from "#/lib/map-context"
+import { pickDestRoom, useRoutePlanner } from "#/lib/route-planner-store"
 import { getRoomTypeMeta, getRoomTypeOutline } from "#/lib/room-types"
 import { getAllRoomsData } from "#/server/room.functions"
 
@@ -220,6 +221,7 @@ export const RoomPolygonsLayer = ({ neighbourOpacityRef }: RoomPolygonsLayerProp
     viewingRoomId,
     setViewingRoomId,
   } = useMap()
+  const { pickMode } = useRoutePlanner()
 
   const { data: rooms = [] } = useQuery({
     queryKey: ["rooms"],
@@ -235,10 +237,12 @@ export const RoomPolygonsLayer = ({ neighbourOpacityRef }: RoomPolygonsLayerProp
 
   const isEditing = activeTool === "edit-room"
   const isIdle = activeTool === "default"
-  const roomsAreClickable = isEditing || isIdle
+  const roomsAreClickable = isEditing || isIdle || pickMode === "dest"
 
   const handleSelect = (id: string) => {
-    if (isEditing) {
+    if (pickMode === "dest") {
+      pickDestRoom(id)
+    } else if (isEditing) {
       setEditingRoomId(id)
     } else {
       setViewingRoomId(id)

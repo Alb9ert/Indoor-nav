@@ -250,3 +250,7 @@ export const deleteRoom = async (id: string): Promise<{ id: string }> => {
   await prisma.room.delete({ where: { id } })
   return { id }
 }
+
+export const getRoomWithNodes = async (id: string) => {
+  return await prisma.room.findUnique({ where: { id }, include: { nodes: true } })
+}

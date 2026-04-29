@@ -1,3 +1,4 @@
+import { useIsLoggedIn } from "#/lib/auth-hooks"
 import { useMap } from "#/lib/map-context"
 import { TOOL_REGISTRY } from "#/lib/tool-registry"
 import { cn } from "@/lib/utils"
@@ -10,23 +11,15 @@ interface ToolPaletteProps {
   className?: string
 }
 
-/**
- * Tools exposed in the palette today. The registry includes future tools
- * (e.g. `connect-edge`) that aren't wired yet — drop an id in here once its
- * implementation lands.
- */
-const VISIBLE_TOOLS: ToolId[] = ["default", "draw-room", "edit-room", "draw-node", "connect-edge"]
+const ADMIN_TOOLS: ToolId[] = ["draw-room", "edit-room", "draw-node", "connect-edge"]
+const USER_TOOLS: ToolId[] = ["default", "route-plan"]
 
-/**
- * Vertical tool palette on the left edge of the map. Exactly one tool can be
- * active at a time; clicking the active tool reverts to the default tool.
- * Contextual actions for the active tool live in the `ActionBar` at the
- * bottom-center.
- */
 export const ToolPalette = ({ className }: ToolPaletteProps) => {
   const { activeTool, setActiveTool } = useMap()
+  const { isLoggedIn } = useIsLoggedIn()
 
-  const visibleTools = TOOL_REGISTRY.filter((t) => VISIBLE_TOOLS.includes(t.id))
+  const visibleToolIds: ToolId[] = isLoggedIn ? [...USER_TOOLS, ...ADMIN_TOOLS] : USER_TOOLS
+  const visibleTools = TOOL_REGISTRY.filter((t) => visibleToolIds.includes(t.id))
 
   return (
     <div

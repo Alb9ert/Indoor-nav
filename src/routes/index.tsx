@@ -11,6 +11,7 @@ import { RoomOverlayToggle } from "#/components/map/user-tools/room-overlay-togg
 import { EdgeMetadataPanel } from "#/components/panels/edge-metadata-panel"
 import { NodeMetadataPanel } from "#/components/panels/node-metadata-panel"
 import { RoomInfoPanel } from "#/components/panels/room-info-panel"
+import { RoutePlannerPanel } from "#/components/panels/route-planner-panel"
 import { RoomMetadataPanel } from "#/components/panels/room-metadata-panel"
 import { MapScene } from "#/components/threeJS/map-scene"
 import { buttonVariants } from "#/components/ui/button"
@@ -25,6 +26,7 @@ const App = () => {
     <TooltipProvider>
       <MapProvider>
         <main className="w-screen h-screen overflow-y-hidden">
+          <ToolPalette className="absolute left-6 top-1/2 -translate-y-1/2 z-30" />
           {!isPending &&
             (isLoggedIn ? (
               <>
@@ -34,7 +36,6 @@ const App = () => {
                 >
                   Manage
                 </Link>
-                <ToolPalette className="absolute left-6 top-1/2 -translate-y-1/2 z-10" />
                 <ActionBar className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10" />
                 <RoomMetadataPanel />
                 <NodeMetadataPanel />
@@ -44,7 +45,8 @@ const App = () => {
           <FuzzySearchBar />
           <MapScene />
           <RoomInfoPanel />
-          <div className="absolute flex flex-col gap-2 bottom-6 right-6 z-10">
+          <RoutePlannerPanel />
+          <div className="absolute flex flex-col gap-2 bottom-6 right-6 z-30">
             {isLoggedIn && <DebugToggle />}
             <RoomOverlayToggle />
             <RenderModeToggle />

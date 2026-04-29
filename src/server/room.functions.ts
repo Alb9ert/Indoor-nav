@@ -3,7 +3,7 @@ import { z } from "zod"
 
 import { ROOM_TYPES } from "../lib/room-types"
 
-import { createRoom, deleteRoom, getAllRooms, updateRoomMetadata } from "./room.server"
+import { createRoom, deleteRoom, getAllRooms, getRoomWithNodes, updateRoomMetadata } from "./room.server"
 
 const roomTypeEnum = z.enum(ROOM_TYPES)
 
@@ -53,4 +53,10 @@ export const deleteRoomData = createServerFn({ method: "POST" })
   .inputValidator(deleteRoomSchema)
   .handler(async ({ data }) => {
     return await deleteRoom(data.id)
+  })
+
+export const getRoomWithNodesData = createServerFn({ method: "GET" })
+  .inputValidator(z.object({ id: z.string().min(1) }))
+  .handler(async ({ data }) => {
+    return await getRoomWithNodes(data.id)
   })
