@@ -1,6 +1,11 @@
 import type { AstarInput } from "./astar.functions"
-import type { Node } from "#/generated/prisma/client"
+import type { Edge, Node } from "#/generated/prisma/client"
 import { getGraph } from "./graph.server"
+
+const TURN_PENALTY = 1
+const TURN_ANGLE_THRESHOLD = 30 // degrees
+
+const graph = await getGraph()
 
 const findClosestNode = async (x: number, y: number, z: number): Promise<Node | null> => {
   const graph = await getGraph()
@@ -19,19 +24,67 @@ const findClosestNode = async (x: number, y: number, z: number): Promise<Node | 
   return closest
 }
 
-const reconstructPath = (
-  parent: Map<string, string>,
-  t: string,
-  nodes: Map<string, Node>,
-): Node[] => {
-  const path: Node[] = [nodes.get(t)!]
+const reconstructPath = (parent: Map<Node, Node>, t: Node): Node[] => {
+  const path: Node[] = [t]
   while (parent.has(t)) {
     t = parent.get(t)!
-    path.unshift(nodes.get(t)!)
+    path.unshift(t)
   }
   return path
 }
 
+const heuristic = (
+  node: Node,
+  target: Node,
+  profile: AstarInput["profile"],
+  previousEdge?: Edge,
+): number => {
+  if (profile === "ACCESIBLE_ROUTE" && node.type === "STAIR" && previousEdge) {
+    const fromNode = graph.nodes.get(previousEdge.fromNodeId)
+    if (fromNode && fromNode.floor !== node.floor) return Infinity
+  }
+
+  let turnPenalty = 0
+
+  if (profile === "SIMPLE_ROUTE" && previousEdge) {
+    const fromNode = graph.nodes.get(previousEdge.fromNodeId)
+    const toNode = graph.nodes.get(previousEdge.toNodeId)
+    if (fromNode && toNode) {
+      const angle =
+        Math.atan2(node.y - fromNode.y, node.x - fromNode.x) -
+        Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x)
+      const angleDeg = Math.abs((angle * 180) / Math.PI)
+      turnPenalty = angleDeg > TURN_ANGLE_THRESHOLD ? TURN_PENALTY : 0
+    }
+  }
+
+  return Math.hypot(node.x - target.x, node.y - target.y, node.z - target.z) + turnPenalty
+}
+
+const findDestinationNode = (destRoom: AstarInput["dest"], startNode: Node): Node | null => {
+  const closest = (type: string): Node | null => {
+    let bestNode: Node | null = null
+    let bestDist = Infinity
+    for (const n of destRoom.nodes) {
+      if (n.type !== type) continue
+      const dist = Math.hypot(n.x - startNode.x, n.y - startNode.y, n.z - startNode.z)
+      if (dist < bestDist) {
+        bestDist = dist
+        bestNode = n as Node
+      }
+    }
+    return bestNode
+  }
+
+  return closest("ENDPOINT") ?? closest("DOOR")
+}
+
+const insertSorted = (open: [Node, number][], node: Node, f: number): void => {
+  open.push([node, f])
+  open.sort(([, a], [, b]) => a - b)
+}
+
+// Algorithm based on pseudocode written in the report
 export const astar = async (
   profile: AstarInput["profile"],
   dest: AstarInput["dest"],
@@ -40,10 +93,6 @@ export const astar = async (
   // If start position is a node
   let firstNode: Node
   if ("id" in start) {
-    // If start node is also end node
-    if (start.id === dest.id) {
-      return [start]
-    }
     firstNode = start as Node
   } else {
     // If start position is not a node, find the closest node to the start position
@@ -52,29 +101,74 @@ export const astar = async (
     firstNode = closest
   }
 
+  const destinationNode = findDestinationNode(dest, firstNode)
+  if (!destinationNode) return null
+
+  // If start node is also end node
+  if (firstNode.id === destinationNode.id) return [firstNode]
+
+  // --------------------------------
+  // Start of algorithm
+  // --------------------------------
+
   // open: priority queue ordered by ascending f-value, where f(v) = g[v] + h(v)
-  const open = new Set<string>()
-  const closed = new Set<string>()
+  const open: [Node, number][] = []
+  const closed = new Set<Node>()
   // g: best known cost from start to v, default is infinity
-  const g = new Map<string, number>()
-  const parent = new Map<string, string>()
+  const g = new Map<Node, number>()
+  const parent = new Map<Node, Node>()
 
-  g.set(firstNode.id, 0)
-  open.add(firstNode.id) // insert s with priority h(s)
+  g.set(firstNode, 0)
 
-  let current: Node | null = null
+  // insert s with priority h(s)
+  insertSorted(open, firstNode, heuristic(firstNode, destinationNode, profile))
 
-  const graph = await getGraph()
+  while (open.length > 0) {
+    const [current] = open.shift()! // node in open with lowest f-value
 
-  while (open.size > 0) {
-    const currentId = open.values().next().value as string // node in open with lowest f-value
-    open.delete(currentId)
-    current = graph.nodes.get(currentId) ?? null
-
-    if (current && dest.nodes.some((n) => n.id === current.id)) {
-      return reconstructPath(parent, current.id, graph.nodes)
+    if (current.id === destinationNode.id) {
+      return reconstructPath(parent, current)
     }
 
-    if (current) closed.add(current.id) // add current to closed
+    closed.add(current) // add current to closed
+
+    graph.getNeighbors(current.id).forEach((edge) => {
+      const neighbor = graph.nodes.get(edge.toNodeId)
+      if (!neighbor || !neighbor.isActivated) return
+
+      // g′ ← g[n] + w(n, n′)
+      const candidateCost = (g.get(current) ?? Infinity) + edge.distance
+
+      // case 1: If n′ is new if n′ ∉ closed and n′ ∉ open
+      if (!closed.has(neighbor) && !open.some(([n]) => n.id === neighbor.id)) {
+        g.set(neighbor, candidateCost) // g[n′] ← g′
+        parent.set(neighbor, current) // parent[n′] ← n
+
+        // update n′ priority in open to g′ + h(n′)
+        insertSorted(
+          open,
+          neighbor,
+          candidateCost + heuristic(neighbor, destinationNode, profile, edge),
+        )
+
+        // case 2: cheaper path via n ... else if n′ ∈ open and g′ < g[n′] then
+      } else if (
+        open.some(([n]) => n.id === neighbor.id) &&
+        candidateCost < (g.get(neighbor) ?? Infinity)
+      ) {
+        // g[n′] ← g′
+        g.set(neighbor, candidateCost)
+
+        // parent[n′] ← n
+        parent.set(neighbor, current)
+
+        // update n′ priority in open to g′ + h(n′)
+        const existing = open.findIndex(([n]) => n.id === neighbor.id)
+        if (existing !== -1) open.splice(existing, 1)
+        const h2 = heuristic(neighbor, destinationNode, profile, edge)
+        insertSorted(open, neighbor, candidateCost + h2)
+      }
+    })
   }
+  return null
 }
