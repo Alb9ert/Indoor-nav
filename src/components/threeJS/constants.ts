@@ -32,3 +32,11 @@ export const SNAP_RADIUS_METERS = 0.5
  * Storage is unaffected - only rendering positions are lifted by this amount.
  */
 export const DRAWING_LIFT = 0.05
+
+/**
+ * Vertical offset for navigation overlay markers (start / destination rings).
+ * Larger than `DRAWING_LIFT` so the markers visibly hover above the room
+ * polygons in 3D oblique views; depth-testing is also disabled on these so
+ * the lift is mainly a 3D affordance.
+ */
+export const MARKER_LIFT = DRAWING_LIFT * 4

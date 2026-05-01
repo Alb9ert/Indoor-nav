@@ -2,7 +2,6 @@ import * as React from "react"
 import { Search, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SearchResultList, type SearchResultItem } from "./search-result-list"
-import { Input } from "./input"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,7 +68,7 @@ interface SearchInputProps extends Omit<React.ComponentProps<"input">, "type"> {
  * the visual chrome, and hides the WebKit "x" so we can render our own.
  */
 const SearchInput = ({ combobox, className, ...props }: SearchInputProps) => (
-  <Input
+  <input
     type="search"
     role={combobox ? "combobox" : undefined}
     aria-expanded={combobox?.expanded}

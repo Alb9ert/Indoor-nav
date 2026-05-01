@@ -327,10 +327,7 @@ export const NodeEditPanel = ({ nodeId }: NodeEditPanelProps) => {
             disabled={activateMutation.isPending}
           />
         </div>
-        <DetailRow
-          label="Room"
-          value={linkedRoom ? formatRoomLabel(linkedRoom) : "None"}
-        />
+        <DetailRow label="Room" value={linkedRoom ? formatRoomLabel(linkedRoom) : "None"} />
       </div>
 
       <form.Field name="type">

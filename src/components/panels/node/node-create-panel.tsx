@@ -236,10 +236,7 @@ export const NodeCreatePanel = () => {
         )}
       </form.Field>
 
-      <DetailRow
-        label="Room"
-        value={linkedRoom ? formatRoomLabel(linkedRoom) : "None"}
-      />
+      <DetailRow label="Room" value={linkedRoom ? formatRoomLabel(linkedRoom) : "None"} />
 
       <form.Field name="isActivated">
         {(field) => (

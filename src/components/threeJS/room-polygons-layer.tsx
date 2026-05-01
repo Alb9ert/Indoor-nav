@@ -7,11 +7,12 @@ import * as THREE from "three"
 
 import { useMap } from "#/lib/map-context"
 import { getRoomTypeMeta, getRoomTypeOutline } from "#/lib/room-types"
+import { floorToY, polygonCentroid } from "#/lib/three-utils"
 import { getAllRoomsData } from "#/server/room.functions"
 
 import { useCanvasPointer } from "../hooks/use-canvas-pointer"
 
-import { DRAWING_LIFT, FLOOR_HEIGHT } from "./constants"
+import { DRAWING_LIFT } from "./constants"
 import { EdgePreview } from "./draw-primitives"
 
 import type { PersistedRoom, RoomVertex } from "#/server/room.server"
@@ -56,17 +57,6 @@ const buildPolygonGeometry = (vertices: RoomVertex[]): THREE.BufferGeometry => {
   return geometry
 }
 
-const computeCentroid = (vertices: RoomVertex[]): { x: number; z: number } => {
-  let sumX = 0
-  let sumZ = 0
-  for (const v of vertices) {
-    sumX += v.x
-    sumZ += v.z
-  }
-  const n = vertices.length
-  return { x: sumX / n, z: sumZ / n }
-}
-
 interface RoomPolygonProps {
   room: PersistedRoom
   active: boolean
@@ -105,9 +95,9 @@ const RoomPolygon = ({
   const fillColor = useMemo(() => getRoomTypeMeta(room.type).color, [room.type])
   const TypeIcon = useMemo(() => getRoomTypeMeta(room.type).icon, [room.type])
   const outlineColor = useMemo(() => getRoomTypeOutline(room.type), [room.type])
-  const centroid = useMemo(() => computeCentroid(room.vertices), [room.vertices])
+  const centroid = useMemo(() => polygonCentroid(room.vertices), [room.vertices])
 
-  const yFill = room.floor * FLOOR_HEIGHT + DRAWING_LIFT
+  const yFill = floorToY(room.floor, DRAWING_LIFT)
   const yOutline = yFill + OUTLINE_LIFT
   const iconPosition = useMemo(
     () => new THREE.Vector3(centroid.x, yOutline, centroid.z),
@@ -219,6 +209,7 @@ export const RoomPolygonsLayer = ({ neighbourOpacityRef }: RoomPolygonsLayerProp
     setEditingRoomId,
     viewingRoomId,
     setViewingRoomId,
+    pickingStart,
   } = useMap()
 
   const { data: rooms = [] } = useQuery({
@@ -235,7 +226,9 @@ export const RoomPolygonsLayer = ({ neighbourOpacityRef }: RoomPolygonsLayerProp
 
   const isEditing = activeTool === "edit-room"
   const isIdle = activeTool === "default"
-  const roomsAreClickable = isEditing || isIdle
+  // Rooms are inert while the user is picking a coordinate on the map; clicks
+  // would otherwise open the room info drawer on top of the pick overlay.
+  const roomsAreClickable = (isEditing || isIdle) && !pickingStart
 
   const handleSelect = (id: string) => {
     if (isEditing) {

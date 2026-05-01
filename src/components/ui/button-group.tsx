@@ -52,10 +52,7 @@ export const ButtonGroupSeparator = ({
   />
 )
 
-export const ButtonGroupText = ({
-  className,
-  ...props
-}: ComponentPropsWithoutRef<"span">) => (
+export const ButtonGroupText = ({ className, ...props }: ComponentPropsWithoutRef<"span">) => (
   <span
     className={cn(
       "inline-flex items-center px-3 text-sm text-muted-foreground bg-card border border-border",
