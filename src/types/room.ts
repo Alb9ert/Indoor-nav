@@ -21,6 +21,7 @@ export type RoomVertex = z.infer<typeof RoomVertexSchema>
  * that includes the room's nodes — see `AstarInputSchema` in
  * `types/navigation.ts`.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const RoomSchema = z.object({
   id: z.string(),
   roomNumber: z.string(),

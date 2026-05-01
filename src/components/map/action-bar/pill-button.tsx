@@ -23,13 +23,7 @@ interface PillButtonProps {
  * button variant so hover / pressed styling stays consistent with any other
  * toolbar-style buttons the app adds later.
  */
-export const PillButton = ({
-  icon,
-  label,
-  disabled,
-  onClick,
-  prominentLabel,
-}: PillButtonProps) => (
+export const PillButton = ({ icon, label, disabled, onClick, prominentLabel }: PillButtonProps) => (
   <Tooltip>
     <TooltipTrigger
       render={

@@ -48,6 +48,7 @@ export const NodeIdSchema = z.object({ id: z.string().min(1) })
  * `CreateNode` input plus the link back to the source room (if the user
  * dropped the pin inside one).
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const PendingNodeSchema = z.object({
   x: z.number(),
   y: z.number(),

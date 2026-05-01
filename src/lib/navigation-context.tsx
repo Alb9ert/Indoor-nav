@@ -2,8 +2,8 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 
 import { polygonCentroid } from "#/lib/three-utils"
 
-import type { Node } from "#/types/node"
 import type { NavigationStart, RoutePreference } from "#/types/navigation"
+import type { Node } from "#/types/node"
 import type { Room } from "#/types/room"
 
 /** Which navigation panel field the user is currently editing. */

@@ -89,6 +89,7 @@ const ActionBarShell = ({
   </div>
 )
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const ModeLabel = ({ icon: Icon, label }: { icon: LucideIcon; label: string }) => (
   <span className="flex items-center gap-2 whitespace-nowrap text-xs font-semibold md:pr-1">
     <Icon className="size-4" />
