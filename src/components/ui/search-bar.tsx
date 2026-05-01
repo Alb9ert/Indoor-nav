@@ -1,9 +1,8 @@
-"use client"
-
 import * as React from "react"
 import { Search, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SearchResultList, type SearchResultItem } from "./search-result-list"
+import { Input } from "./input"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -57,6 +56,37 @@ export type SearchBarProps =
   | SearchBarIntegratedProps
   | SearchBarFieldProps
 
+// ─── Shared input ─────────────────────────────────────────────────────────────
+
+interface SearchInputProps extends Omit<React.ComponentProps<"input">, "type"> {
+  /** When set, marks the input as a combobox controlling a results dropdown. */
+  combobox?: { expanded: boolean; controlsId?: string }
+}
+
+/**
+ * Bare input shared by all three SearchBar modes. Strips the wrapping
+ * shadcn `Input` borders/shadow/padding so the surrounding pill provides
+ * the visual chrome, and hides the WebKit "x" so we can render our own.
+ */
+const SearchInput = ({ combobox, className, ...props }: SearchInputProps) => (
+  <Input
+    type="search"
+    role={combobox ? "combobox" : undefined}
+    aria-expanded={combobox?.expanded}
+    aria-autocomplete={combobox ? "list" : undefined}
+    aria-controls={combobox?.controlsId}
+    className={cn(
+      "flex-1 min-w-0 bg-transparent text-foreground",
+      "placeholder:text-muted-foreground",
+      "text-base leading-6",
+      "focus:outline-none",
+      "[&::-webkit-search-cancel-button]:hidden",
+      className,
+    )}
+    {...props}
+  />
+)
+
 // ─── SearchBar ────────────────────────────────────────────────────────────────
 
 export function SearchBar(props: SearchBarProps) {
@@ -73,7 +103,7 @@ export function SearchBar(props: SearchBarProps) {
   const [isFocused, setIsFocused] = React.useState(false)
   const wrapperRef = React.useRef<HTMLDivElement>(null)
 
-  const query = controlledValue !== undefined ? controlledValue : internalQuery
+  const query = controlledValue ?? internalQuery
 
   // Sync if controlled
   React.useEffect(() => {
@@ -124,24 +154,16 @@ export function SearchBar(props: SearchBarProps) {
         {leadingIcon ?? (
           <Search className="w-5 h-5 text-muted-foreground shrink-0" aria-hidden="true" />
         )}
-        <input
-          type="search"
+        <SearchInput
           value={query}
+          placeholder={placeholder}
+          aria-label={inputAriaLabel ?? placeholder}
           onChange={handleChange}
+          onKeyDown={handleKeyDown}
           onFocus={() => {
             setIsFocused(true)
             onFocus?.()
           }}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          aria-label={inputAriaLabel ?? placeholder}
-          className={cn(
-            "flex-1 min-w-0 bg-transparent text-card-foreground",
-            "placeholder:text-muted-foreground",
-            "text-base leading-6",
-            "focus:outline-none",
-            "[&::-webkit-search-cancel-button]:hidden",
-          )}
         />
         {onClear && query.length > 0 && (
           <button
@@ -177,28 +199,20 @@ export function SearchBar(props: SearchBarProps) {
           {/* Input row */}
           <div className="flex items-center gap-3 px-4 py-3">
             <Search className="w-5 h-5 text-muted-foreground shrink-0" aria-hidden="true" />
-            <input
-              type="search"
+            <SearchInput
               value={query}
+              placeholder={placeholder}
+              aria-label={inputAriaLabel ?? placeholder}
               onChange={handleChange}
+              onKeyDown={handleKeyDown}
               onFocus={() => {
                 setIsFocused(true)
                 props.onFocus?.()
               }}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              aria-label={inputAriaLabel ?? placeholder}
-              aria-expanded={showDropdown}
-              aria-autocomplete="list"
-              aria-controls={showDropdown ? "search-results-dropdown" : undefined}
-              role="combobox"
-              className={cn(
-                "flex-1 min-w-0 bg-transparent text-foreground",
-                "placeholder:text-muted-foreground",
-                "text-base leading-6",
-                "focus:outline-none",
-                "[&::-webkit-search-cancel-button]:hidden",
-              )}
+              combobox={{
+                expanded: showDropdown,
+                controlsId: showDropdown ? "search-results-dropdown" : undefined,
+              }}
             />
           </div>
         </div>
@@ -235,22 +249,14 @@ export function SearchBar(props: SearchBarProps) {
       )}
     >
       <Search className="w-5 h-5 text-muted-foreground shrink-0" aria-hidden="true" />
-      <input
-        type="search"
+      <SearchInput
         value={query}
-        onChange={handleChange}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         aria-label={inputAriaLabel ?? placeholder}
-        className={cn(
-          "flex-1 min-w-0 bg-transparent text-foreground",
-          "placeholder:text-muted-foreground",
-          "text-base leading-6",
-          "focus:outline-none",
-          "[&::-webkit-search-cancel-button]:hidden",
-        )}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
       />
     </div>
   )
