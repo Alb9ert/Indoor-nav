@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
+import { useEffect } from "react"
 
 import { useIsMobile } from "#/components/hooks/use-is-mobile"
 import { ActionBar } from "#/components/map/action-bar/action-bar"
@@ -37,11 +38,26 @@ import { NavigationProvider, useNavigation } from "#/lib/navigation-context"
  */
 const Layout = () => {
   const { isLoggedIn, isPending } = useIsLoggedIn()
-  const { debugMode, pickingStart } = useMap()
-  const { navigationPanelOpen } = useNavigation()
+  const { debugMode, pickingStart, activeTool, setActiveTool } = useMap()
+  const { navigationPanelOpen, setNavigationPanelOpen } = useNavigation()
   const isMobile = useIsMobile()
   const isAdmin = !isPending && isLoggedIn
   const showAdminUI = isAdmin && (!isMobile || debugMode)
+
+  // Mutual exclusion: opening the navigation panel exits any admin tool, and
+  // activating a tool closes the navigation panel. Two effects with no-op
+  // guards converge to a stable state without racing.
+  useEffect(() => {
+    if (navigationPanelOpen && activeTool !== "default") setActiveTool("default")
+  }, [navigationPanelOpen, activeTool, setActiveTool])
+  useEffect(() => {
+    if (activeTool !== "default" && navigationPanelOpen) setNavigationPanelOpen(false)
+  }, [activeTool, navigationPanelOpen, setNavigationPanelOpen])
+
+  // The bottom action bar is on screen on mobile when picking or when an
+  // admin tool is active. The right-anchored floating controls shift up
+  // to clear it. Desktop pill is short enough that no shift is needed.
+  const actionBarVisible = pickingStart || activeTool !== "default"
 
   return (
     <main className="relative h-dvh w-full overflow-hidden bg-background">
@@ -54,7 +70,7 @@ const Layout = () => {
 
         <div
           className={`pointer-events-auto absolute flex flex-col gap-2 ${
-            pickingStart ? "right-6 bottom-28" : "right-6 bottom-6"
+            actionBarVisible ? "right-6 bottom-28" : "right-6 bottom-6"
           } ${
             // Desktop: shift left of the right-anchored navigation panel
             // (md:w-88 = 22rem) so controls stay visible while it's open.
@@ -79,9 +95,9 @@ const Layout = () => {
               Manage
             </Link>
             <ToolPalette className="pointer-events-auto absolute top-1/2 left-6 -translate-y-1/2" />
-            <ActionBar className="pointer-events-auto absolute bottom-6 left-1/2 -translate-x-1/2" />
           </>
         )}
+        <ActionBar />
       </div>
 
       {showAdminUI && (
