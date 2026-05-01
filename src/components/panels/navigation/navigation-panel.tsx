@@ -1,43 +1,31 @@
-import { Circle, Crosshair, MapPin } from "lucide-react"
-import { useState } from "react"
+/* eslint-disable @typescript-eslint/naming-convention */
+import { Fragment, useState } from "react"
 
 import { useFuzzySearch } from "#/components/hooks/use-fuse"
+import {
+  DotConnector,
+  FIELD_LABEL,
+  FIELDS,
+  PREFERENCE_OPTIONS,
+  SELECT_ON_MAP_ITEM,
+  type FieldConfig,
+  type FieldKey,
+} from "#/components/panels/navigation/navigation-panel-shared"
 import { Panel } from "#/components/panels/panel"
 import { Button } from "#/components/ui/button"
 import { SearchBar } from "#/components/ui/search-bar"
 import { SearchResultList, type SearchResultItem } from "#/components/ui/search-result-list"
 import { Separator } from "#/components/ui/separator"
+import { ToggleGroup, ToggleGroupItem } from "#/components/ui/toggle-group"
+import { useMap } from "#/lib/map-context"
 import { useNavigation } from "#/lib/navigation-context"
-import { getRoomTypeMeta, getRoomTypeOutline } from "#/lib/room-types"
+import {
+  formatNavigationValue,
+  roomToSearchResultItem,
+  type RoomSearchResultItem,
+} from "#/lib/room-format"
 
 import type { NavigationRequest } from "#/lib/navigation-context"
-
-type FieldKey = "start" | "destination"
-
-type RoomResultItem = SearchResultItem & { dbId: string }
-
-const formatValue = (value: NavigationRequest["start"] | null) => {
-  if (!value) return ""
-  if ("roomNumber" in value) {
-    return value.displayName ? `${value.roomNumber} - ${value.displayName}` : value.roomNumber
-  }
-  if ("id" in value) return `Node ${value.id.slice(0, 6)}`
-  return `${value.x.toFixed(2)}, ${value.y.toFixed(2)} (floor ${value.floor})`
-}
-
-/**
- * Vertical 3-dot connector between the two field icons. Aligned to the
- * leading-icon column of the SearchBar field variant (px-4 + half icon).
- */
-const DotConnector = () => (
-  <div className="flex pl-4 my-2.5">
-    <div className="flex w-5 flex-col items-center gap-1.5 py-0.5">
-      <div className="size-1 rounded-full bg-muted-foreground/60" />
-      <div className="size-1 rounded-full bg-muted-foreground/60" />
-      <div className="size-1 rounded-full bg-muted-foreground/60" />
-    </div>
-  </div>
-)
 
 export const NavigationPanel = () => {
   const {
@@ -47,7 +35,10 @@ export const NavigationPanel = () => {
     setNavigationPanelOpen,
     setStart,
     setDestination,
+    preference,
+    setPreference,
   } = useNavigation()
+  const { pickingStart, setPickingStart } = useMap()
 
   const [activeField, setActiveField] = useState<FieldKey | null>(null)
   const [query, setQuery] = useState("")
@@ -59,51 +50,27 @@ export const NavigationPanel = () => {
   const [prevOpen, setPrevOpen] = useState(navigationPanelOpen)
   if (navigationPanelOpen !== prevOpen) {
     setPrevOpen(navigationPanelOpen)
-    if (navigationPanelOpen) {
-      setActiveField(destination !== null && start === null ? "start" : null)
-    } else {
-      setActiveField(null)
-    }
+    setActiveField(navigationPanelOpen && destination !== null && start === null ? "start" : null)
     setQuery("")
   }
 
-  const valueFor = (field: FieldKey) =>
-    activeField === field ? query : formatValue(field === "start" ? start : destination)
+  const fieldValue = (field: FieldKey) => (field === "start" ? start : destination)
+  const clearField = (field: FieldKey) => {
+    if (field === "start") setStart(null)
+    else setDestination(null)
+  }
 
   const focusField = (field: FieldKey) => {
     setActiveField(field)
     setQuery("")
   }
 
-  // Match FuzzySearchBar shape exactly — roomNumber as the displayed primary
-  // label, displayName as the secondary, plus a dbId attached for lookup.
-  const roomResults: RoomResultItem[] =
-    isLoading || activeField === null
-      ? []
-      : results.map((r) => {
-          const meta = getRoomTypeMeta(r.item.type)
-          const outline = getRoomTypeOutline(r.item.type)
-          const Icon = meta.icon
-          return {
-            id: r.item.roomNumber,
-            icon: <Icon className="w-5 h-5" style={{ color: outline }} />,
-            iconBgStyle: { backgroundColor: meta.color, outline: `2px solid ${outline}` },
-            title: r.item.displayName ?? "",
-            type: meta.label,
-            dbId: r.item.id,
-          }
-        })
-
-  const selectOnMapItem: SearchResultItem = {
-    id: "Select on map",
-    icon: <Crosshair className="w-5 h-5 text-white" />,
-    iconBgStyle: { backgroundColor: "var(--color-primary)" },
-    title: "",
-    type: "Pick a point on the floor plan",
-  }
+  const roomResults: RoomSearchResultItem[] =
+    isLoading || activeField === null ? [] : results.map((r) => roomToSearchResultItem(r.item))
 
   const handlePickRoom = (item: SearchResultItem) => {
-    const room = results.find((r) => r.item.roomNumber === item.id)?.item
+    const { dbId } = item as RoomSearchResultItem
+    const room = results.find((r) => r.item.id === dbId)?.item
     if (!room || !activeField) return
     if (activeField === "start") setStart(room)
     else setDestination(room)
@@ -112,26 +79,32 @@ export const NavigationPanel = () => {
   }
 
   const handleSelectOnMap = () => {
-    // TODO: enter map-pick mode for the start location.
-    console.log("Select on map: not yet implemented")
     setActiveField(null)
     setQuery("")
+    setPickingStart(true)
+  }
+
+  const handleClose = () => {
+    setNavigationPanelOpen(false)
+    setStart(null)
+    setDestination(null)
+    setActiveField(null)
+    setQuery("")
+    setPickingStart(false)
   }
 
   const canStart = start !== null && destination !== null
 
+  const headerText = (() => {
+    if (activeField !== null) return `Selecting ${FIELD_LABEL[activeField]} - pick a result below`
+    if (canStart) return "Ready to go"
+    return "Choose a start location and destination"
+  })()
+
   const header = (
     <div className="flex flex-col gap-1 p-5 pr-14">
       <h2 className="text-2xl font-bold">Navigation</h2>
-      <p className="text-sm text-popover-foreground/70">
-        {activeField === "start"
-          ? "Selecting start location — pick a result below"
-          : activeField === "destination"
-            ? "Selecting destination — pick a result below"
-            : canStart
-              ? "Ready to go"
-              : "Choose a start location and destination"}
-      </p>
+      <p className="text-sm text-popover-foreground/70">{headerText}</p>
     </div>
   )
 
@@ -143,66 +116,70 @@ export const NavigationPanel = () => {
     </div>
   )
 
+  const renderField = ({ key, icon: Icon, placeholder, ariaLabel }: FieldConfig) => {
+    const value = fieldValue(key)
+    const isActive = activeField === key
+    return (
+      <SearchBar
+        type="field"
+        leadingIcon={<Icon className="size-5 text-muted-foreground shrink-0" />}
+        placeholder={placeholder}
+        value={isActive ? query : formatNavigationValue(value)}
+        active={isActive}
+        onFocus={() => {
+          focusField(key)
+        }}
+        onQueryChange={setQuery}
+        onClear={
+          value !== null && !isActive
+            ? () => {
+                clearField(key)
+                setActiveField(key)
+                setQuery("")
+              }
+            : undefined
+        }
+        inputAriaLabel={ariaLabel}
+      />
+    )
+  }
+
+  const emptyResultsMessage =
+    query.trim().length === 0 ? "Start typing to search rooms" : "No matches"
+
   return (
     <Panel
-      open={navigationPanelOpen}
+      open={navigationPanelOpen && !pickingStart}
       fullHeight
-      onClose={() => {
-        setNavigationPanelOpen(false)
-        setStart(null)
-        setDestination(null)
-        setActiveField(null)
-        setQuery("")
-      }}
+      onClose={handleClose}
       header={header}
       footer={footer}
     >
       <div className="sticky top-0 z-10 flex flex-col gap-1 bg-popover px-4 pb-4">
-        <SearchBar
-          type="field"
-          leadingIcon={<Circle className="size-5 text-muted-foreground shrink-0" />}
-          placeholder="Choose start location"
-          value={valueFor("start")}
-          active={activeField === "start"}
-          onFocus={() => {
-            focusField("start")
-          }}
-          onQueryChange={setQuery}
-          onClear={
-            start !== null && activeField !== "start"
-              ? () => {
-                  setStart(null)
-                  setActiveField("start")
-                  setQuery("")
-                }
-              : undefined
-          }
-          inputAriaLabel="Start location"
-        />
+        {FIELDS.map((field, idx) => (
+          <Fragment key={field.key}>
+            {idx > 0 && <DotConnector />}
+            {renderField(field)}
+          </Fragment>
+        ))}
 
-        <DotConnector />
-
-        <SearchBar
-          type="field"
-          leadingIcon={<MapPin className="size-5 text-muted-foreground shrink-0" />}
-          placeholder="Search destination"
-          value={valueFor("destination")}
-          active={activeField === "destination"}
-          onFocus={() => {
-            focusField("destination")
+        <ToggleGroup
+          aria-label="Routing preference"
+          value={[preference]}
+          onValueChange={(next) => {
+            // Single-select: ignore the empty case (require one selected).
+            const [picked] = next
+            if (picked) setPreference(picked as NavigationRequest["preference"])
           }}
-          onQueryChange={setQuery}
-          onClear={
-            destination !== null && activeField !== "destination"
-              ? () => {
-                  setDestination(null)
-                  setActiveField("destination")
-                  setQuery("")
-                }
-              : undefined
-          }
-          inputAriaLabel="Destination"
-        />
+          className="mt-4 w-full [&>button]:flex-1"
+        >
+          {PREFERENCE_OPTIONS.map(({ value, label, icon: Icon }) => (
+            <ToggleGroupItem key={value} value={value} size="sm" aria-label={label}>
+              <Icon className="size-4" />
+              {label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
       </div>
 
       {activeField !== null && (
@@ -210,13 +187,13 @@ export const NavigationPanel = () => {
           <Separator className="bg-white mx-4 my-2" />
           <div className="mx-2">
             <div className="py-2 text-xs font-medium uppercase tracking-wide text-primary-foreground">
-              Results for {activeField === "start" ? "start location" : "destination"}
+              Results for {FIELD_LABEL[activeField]}
             </div>
 
             {activeField === "start" && (
               <>
                 <SearchResultList
-                  items={[selectOnMapItem]}
+                  items={[SELECT_ON_MAP_ITEM]}
                   onItemClick={handleSelectOnMap}
                   bare
                   className="bg-white"
@@ -230,11 +207,11 @@ export const NavigationPanel = () => {
                 items={roomResults}
                 onItemClick={handlePickRoom}
                 bare
-                className="bg-white"
+                className="bg-white overflow-y-scroll"
               />
             ) : (
-              <div className="px-4 py-6 text-sm text-muted-foreground">
-                {query.trim().length === 0 ? "Start typing to search rooms" : "No matches"}
+              <div className="px-4 py-6 text-sm text-muted-foreground max-h-full">
+                {emptyResultsMessage}
               </div>
             )}
           </div>

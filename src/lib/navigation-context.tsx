@@ -9,9 +9,20 @@ export const routePreferences = {
   ACCESSIBLE: "accessible",
 } as const
 
+/**
+ * A coordinate the user picked on the map (no node, no room — just a point).
+ * Stored in *map* coordinates so it has the same shape as `Node` and can flow
+ * through the same conversion helpers.
+ */
+export interface MapPickedPoint {
+  x: number
+  y: number
+  floor: number
+}
+
 export interface NavigationRequest {
   preference: keyof typeof routePreferences
-  start: Node | { x: number; y: number; z: number; floor: number } | PersistedRoom
+  start: Node | MapPickedPoint | PersistedRoom
   destination: PersistedRoom
 }
 

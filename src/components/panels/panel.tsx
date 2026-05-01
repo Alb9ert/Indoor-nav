@@ -21,10 +21,10 @@ interface PanelProps {
   /** Called when the user clicks the built-in close button. Omit to hide it. */
   onClose?: () => void
   /**
-   * When true, the panel always fills the entire viewport height — no drag
-   * handle, no collapsed/expanded snaps. The body scrolls if it overflows.
-   * Use for panels (like navigation) where partial height adds friction
-   * rather than discoverability.
+   * Mobile only: when true, the bottom sheet opens at its expanded snap
+   * (full content / 92dvh cap) instead of the default header-only snap.
+   * The drag handle is still available so the user can swipe down to a
+   * header-only minimum either way. Desktop is always full-height.
    */
   fullHeight?: boolean
 }
@@ -35,13 +35,14 @@ interface PanelProps {
  * Layout (header + body + footer always rendered in that order):
  * - **Desktop (≥ md):** anchored to the right edge, full viewport height.
  *   Header pinned top, footer pinned bottom, body scrolls if it overflows.
- * - **Mobile (< md):** bottom sheet. Collapsed by default to just header +
- *   footer (body hidden). Drag the handle up to grow toward the natural
- *   content height; if content exceeds 92dvh the sheet caps there and the
- *   body scrolls.
- *
- * Snap points: collapsed (header + footer only) and expanded (full content,
- * up to the viewport cap). Releasing the drag picks the nearest.
+ * - **Mobile (< md):** bottom sheet with two snap points:
+ *   - **collapsed**: handle + header + footer (body hidden). Always shows
+ *     the title and the primary action.
+ *   - **expanded**: natural content height, capped at 92dvh; or the full
+ *     viewport when `fullHeight`.
+ *   Drag the handle to move between them; release picks the nearest snap.
+ *   `fullHeight` controls which snap the sheet opens at — collapsed by
+ *   default, expanded when set.
  */
 export const Panel = ({
   open,
@@ -57,8 +58,13 @@ export const Panel = ({
   const footerRef = useRef<HTMLDivElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
 
-  const [chromePx, setChromePx] = useState(0)
+  const [handlePx, setHandlePx] = useState(0)
+  const [headerPx, setHeaderPx] = useState(0)
+  const [footerPx, setFooterPx] = useState(0)
   const [contentPx, setContentPx] = useState(0)
+  const [viewportPx, setViewportPx] = useState(() =>
+    typeof globalThis.innerHeight === "number" ? globalThis.innerHeight : 0,
+  )
   const [heightPx, setHeightPx] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
   const [prevOpen, setPrevOpen] = useState(open)
@@ -66,12 +72,10 @@ export const Panel = ({
 
   useLayoutEffect(() => {
     const measure = () => {
-      const handleH = handleRef.current?.offsetHeight ?? 0
-      const headerH = headerRef.current?.offsetHeight ?? 0
-      const footerH = footerRef.current?.offsetHeight ?? 0
-      const contentH = bodyRef.current?.scrollHeight ?? 0
-      setChromePx(handleH + headerH + footerH)
-      setContentPx(contentH)
+      setHandlePx(handleRef.current?.offsetHeight ?? 0)
+      setHeaderPx(headerRef.current?.offsetHeight ?? 0)
+      setFooterPx(footerRef.current?.offsetHeight ?? 0)
+      setContentPx(bodyRef.current?.scrollHeight ?? 0)
     }
     measure()
     const ro = new ResizeObserver(measure)
@@ -84,20 +88,36 @@ export const Panel = ({
     }
   }, [header, footer, children])
 
-  const maxPx =
-    typeof globalThis.innerHeight === "number" ? (globalThis.innerHeight * MAX_HEIGHT_DVH) / 100 : 0
-  const collapsedPx = chromePx
-  const expandedPx = Math.min(chromePx + contentPx, maxPx)
+  useLayoutEffect(() => {
+    const update = () => {
+      setViewportPx(window.innerHeight)
+    }
+    update()
+    window.addEventListener("resize", update)
+    return () => {
+      window.removeEventListener("resize", update)
+    }
+  }, [])
+
+  const maxPx = (viewportPx * MAX_HEIGHT_DVH) / 100
+  // Snap points: collapsed (chrome only — title + primary action stay visible)
+  // and expanded (natural content height capped at 92dvh, or the full cap for
+  // fullHeight panels).
+  const collapsedPx = handlePx + headerPx + footerPx
+  const naturalPx = collapsedPx + contentPx
+  const expandedPx = fullHeight ? maxPx : Math.min(naturalPx, maxPx)
   const snapMidPx = (collapsedPx + expandedPx) / 2
 
-  // Reset to collapsed each time the sheet re-opens (derived-state pattern).
+  // On open, clear any drag-locked height so the live default snap (driven
+  // by the fallback below) takes over. Releases stale measurements that
+  // would otherwise capture a 0-height footer before it had a chance to
+  // mount. (Derived-state pattern — runs during render, no effect.)
   if (open !== prevOpen) {
     setPrevOpen(open)
     if (open) setHeightPx(null)
   }
 
-  const currentHeight = heightPx ?? collapsedPx
-  const useDragSheet = isMobile && !fullHeight
+  const currentHeight = heightPx ?? (fullHeight ? expandedPx : collapsedPx)
 
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     dragRef.current = { startY: e.clientY, startHeight: currentHeight }
@@ -123,13 +143,13 @@ export const Panel = ({
   return (
     <aside
       aria-hidden={!open}
-      style={useDragSheet ? { height: `${currentHeight}px` } : undefined}
+      style={isMobile ? { height: `${currentHeight}px` } : undefined}
       className={cn(
         "fixed z-30 flex flex-col overflow-hidden bg-popover text-popover-foreground shadow-2xl",
         "transition-transform duration-300 ease-in-out",
         !dragging && "transition-[transform,height]",
-        // mobile shape — drag-sheet anchors to the bottom; full-height covers the viewport
-        useDragSheet ? "inset-x-0 bottom-0 rounded-t-2xl border-t border-border" : "inset-0",
+        // mobile: bottom sheet
+        "inset-x-0 bottom-0 rounded-t-2xl border-t border-border",
         // desktop: right-anchored full-height (overrides the mobile shape)
         "md:inset-x-auto md:bottom-auto md:top-0 md:right-0 md:h-full md:w-88 md:rounded-none md:border-l",
         open
@@ -137,18 +157,16 @@ export const Panel = ({
           : "pointer-events-none translate-y-full md:translate-y-0 md:translate-x-full",
       )}
     >
-      {useDragSheet && (
-        <div
-          ref={handleRef}
-          className="flex shrink-0 cursor-grab touch-none items-center justify-center py-2 active:cursor-grabbing md:hidden"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-        >
-          <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
-        </div>
-      )}
+      <div
+        ref={handleRef}
+        className="flex shrink-0 cursor-grab touch-none items-center justify-center py-2 active:cursor-grabbing md:hidden"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      >
+        <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+      </div>
       <div ref={headerRef} className="relative shrink-0">
         {header}
         {onClose && (
@@ -168,10 +186,10 @@ export const Panel = ({
         ref={bodyRef}
         className={cn(
           "min-h-0 flex-1",
-          // Only enable scroll when the visible body area is actually shorter
-          // than its content. Otherwise touch jitter can scroll a panel that
-          // already fits perfectly.
-          useDragSheet && currentHeight - chromePx >= contentPx
+          // On mobile, only enable scroll when the visible body area is
+          // actually shorter than its content. Otherwise touch jitter can
+          // scroll a panel that already fits perfectly.
+          isMobile && currentHeight - (handlePx + headerPx + footerPx) >= contentPx
             ? "overflow-hidden"
             : "overflow-y-auto",
         )}

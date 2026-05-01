@@ -108,6 +108,13 @@ interface MapContextValue {
    * Canvas (e.g. the compass) can read rotation and reset it.
    */
   controlsRef: RefObject<OrbitControlsHandle | null>
+  /**
+   * When true, an end-user is picking a coordinate on the map (entered from
+   * the navigation panel's "Select on map" result). The map-pick overlay
+   * renders a centered crosshair and a confirm/cancel toolbar.
+   */
+  pickingStart: boolean
+  setPickingStart: (picking: boolean) => void
 }
 
 const MapContext = createContext<MapContextValue | null>(null)
@@ -144,7 +151,9 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
   const [pendingNode, setPendingNode] = useState<PendingNode | null>(null)
   const [pendingEdgeFromNodeId, setPendingEdgeFromNodeId] = useState<string | null>(null)
   const [editingEdgeId, setEditingEdgeId] = useState<string | null>(null)
+  const [pickingStart, setPickingStart] = useState(false)
   const previousRenderModeRef = useRef<RenderMode | null>(null)
+  const previousRenderModeForPickRef = useRef<RenderMode | null>(null)
   const controlsRef = useRef<OrbitControlsHandle | null>(null)
   const gridSpacingRef = useRef<number | null>(null)
 
@@ -175,6 +184,25 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
       setPendingNode(null)
       setPendingEdgeFromNodeId(null)
       setEditingEdgeId(null)
+    },
+    [renderMode],
+  )
+
+  const handleSetPickingStart = useCallback(
+    (picking: boolean) => {
+      setPickingStart((current) => {
+        if (!current && picking) {
+          // Picking only resolves correctly in 2D top-down. Lock the render
+          // mode and remember the previous one to restore on exit.
+          previousRenderModeForPickRef.current = renderMode
+          setRenderMode("2d")
+        } else if (current && !picking) {
+          const previous = previousRenderModeForPickRef.current
+          previousRenderModeForPickRef.current = null
+          if (previous !== null) setRenderMode(previous)
+        }
+        return picking
+      })
     },
     [renderMode],
   )
@@ -233,6 +261,8 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
       setPendingEdgeFromNodeId,
       editingEdgeId,
       setEditingEdgeId,
+      pickingStart,
+      setPickingStart: handleSetPickingStart,
     }),
     [
       floors,
@@ -256,6 +286,8 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
       pendingNode,
       pendingEdgeFromNodeId,
       editingEdgeId,
+      pickingStart,
+      handleSetPickingStart,
     ],
   )
 
