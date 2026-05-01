@@ -1,8 +1,9 @@
 import { useForm } from "@tanstack/react-form"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Trash2, X } from "lucide-react"
+import { Trash2 } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 
+import { Panel } from "#/components/panels/panel"
 import { Button } from "#/components/ui/button"
 import { Input } from "#/components/ui/input"
 import { Label } from "#/components/ui/label"
@@ -31,7 +32,12 @@ import {
 import { getAllRoomsData } from "#/server/room.functions"
 
 import type { NodeType } from "#/generated/prisma/enums"
+import type { FloorPlan } from "#/types/floor-plan"
 import type { ReactNode } from "react"
+
+// ────────────────────────────────────────────────────────────────────────────
+// Constants + shared layout helpers
+// ────────────────────────────────────────────────────────────────────────────
 
 const NODE_TYPE_LABELS: Record<string, string> = {
   DEFAULT: "Default",
@@ -41,30 +47,15 @@ const NODE_TYPE_LABELS: Record<string, string> = {
   ENDPOINT: "Endpoint",
 }
 
-const nodeTypes: NodeType[] = ["DEFAULT", "DOOR", "STAIR", "ELEVATOR", "ENDPOINT"]
+const NODE_TYPES: NodeType[] = ["DEFAULT", "DOOR", "STAIR", "ELEVATOR", "ENDPOINT"]
+const TRANSIT_TYPES = new Set<NodeType>(["STAIR", "ELEVATOR"])
+const FLOOR_HEIGHT_METERS = 3.25
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Layout helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-const PanelHeader = ({
-  title,
-  subtitle,
-  onClose,
-}: {
-  title: string
-  subtitle: string
-  onClose: () => void
-}) => (
-  <header className="flex items-start justify-between gap-2 p-4">
-    <div>
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <p className="text-sm text-muted-foreground">{subtitle}</p>
-    </div>
-    <Button type="button" variant="ghost" size="icon-sm" aria-label="Close panel" onClick={onClose}>
-      <X />
-    </Button>
-  </header>
+const PanelTitle = ({ title, subtitle }: { title: string; subtitle: string }) => (
+  <div className="p-4 pr-14">
+    <h2 className="text-lg font-semibold">{title}</h2>
+    <p className="text-sm text-muted-foreground">{subtitle}</p>
+  </div>
 )
 
 const FieldWrapper = ({
@@ -98,14 +89,138 @@ const MutationError = ({ error, fallback }: { error: unknown; fallback: string }
   </p>
 )
 
-// ─────────────────────────────────────────────────────────────────────────────
+interface CoordinateInputsProps {
+  idPrefix: string
+  xText: string
+  yText: string
+  onXChange: (text: string, parsed: number | null) => void
+  onYChange: (text: string, parsed: number | null) => void
+}
+
+const CoordinateInputs = ({
+  idPrefix,
+  xText,
+  yText,
+  onXChange,
+  onYChange,
+}: CoordinateInputsProps) => (
+  <div className="flex gap-2">
+    <div className="flex flex-1 flex-col gap-1.5">
+      <Label htmlFor={`${idPrefix}-x`}>X</Label>
+      <Input
+        id={`${idPrefix}-x`}
+        className="bg-background text-black focus:ring-offset-2"
+        value={xText}
+        onChange={(e) => {
+          const v = Number.parseFloat(e.target.value)
+          onXChange(e.target.value, Number.isNaN(v) ? null : v)
+        }}
+      />
+    </div>
+    <div className="flex flex-1 flex-col gap-1.5">
+      <Label htmlFor={`${idPrefix}-y`}>Y</Label>
+      <Input
+        id={`${idPrefix}-y`}
+        className="bg-background text-black focus:ring-offset-2"
+        value={yText}
+        onChange={(e) => {
+          const v = Number.parseFloat(e.target.value)
+          onYChange(e.target.value, Number.isNaN(v) ? null : v)
+        }}
+      />
+    </div>
+  </div>
+)
+
+const NodeTypeSelect = ({
+  id,
+  value,
+  onChange,
+}: {
+  id: string
+  value: NodeType
+  onChange: (type: NodeType) => void
+}) => (
+  <FieldWrapper htmlFor={id} label="Node type">
+    <Select
+      value={value}
+      onValueChange={(v) => {
+        if (v) onChange(v as NodeType)
+      }}
+    >
+      <SelectTrigger className="w-full bg-background text-black">
+        <SelectValue placeholder="Select type" />
+      </SelectTrigger>
+      <SelectContent className="bg-background text-black">
+        {NODE_TYPES.map((t) => (
+          <SelectItem className="focus:bg-sidebar-primary/40 cursor-pointer" key={t} value={t}>
+            {NODE_TYPE_LABELS[t]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </FieldWrapper>
+)
+
+// ────────────────────────────────────────────────────────────────────────────
 // Create form — opens when the user clicks an empty spot on the canvas.
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 
-const TRANSIT_TYPES = new Set<NodeType>(["STAIR", "ELEVATOR"])
-const FLOOR_HEIGHT_METERS = 3.25
+interface MultiFloorPickerProps {
+  type: NodeType
+  floors: FloorPlan[]
+  currentFloor: number
+  extraFloors: number[]
+  onToggle: (floor: number) => void
+}
 
-const NodeCreateForm = () => {
+const MultiFloorPicker = ({
+  type,
+  floors,
+  currentFloor,
+  extraFloors,
+  onToggle,
+}: MultiFloorPickerProps) => (
+  <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+    <div>
+      <Label>Place on multiple floors</Label>
+      <p className="mt-0.5 text-xs text-muted-foreground">
+        A {NODE_TYPE_LABELS[type]} node at this position will be created on each checked floor.
+      </p>
+    </div>
+    <div className="flex flex-col gap-1">
+      {floors
+        .slice()
+        .sort((a, b) => a.floor - b.floor)
+        .map((f) => {
+          const isCurrent = f.floor === currentFloor
+          const checked = isCurrent || extraFloors.includes(f.floor)
+          return (
+            <label
+              key={f.floor}
+              className={cn(
+                "flex items-center gap-2 text-sm",
+                isCurrent ? "cursor-not-allowed opacity-60" : "cursor-pointer",
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                disabled={isCurrent}
+                onChange={() => {
+                  onToggle(f.floor)
+                }}
+              />
+              Floor {f.floor}
+              {isCurrent && <span className="text-xs text-muted-foreground">— this floor</span>}
+            </label>
+          )
+        })}
+    </div>
+  </div>
+)
+
+const NodeCreatePanel = () => {
   const { pendingNode, setPendingNode, floors } = useMap()
   const queryClient = useQueryClient()
 
@@ -180,12 +295,6 @@ const NodeCreateForm = () => {
     },
   })
 
-  const handleClose = () => {
-    setPendingNode(null)
-    form.reset()
-    mutation.reset()
-  }
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
@@ -193,204 +302,251 @@ const NodeCreateForm = () => {
         void form.handleSubmit()
       }
     }
-    window.addEventListener("keydown", handleKeyDown)
+    globalThis.addEventListener("keydown", handleKeyDown)
     return () => {
-      window.removeEventListener("keydown", handleKeyDown)
+      globalThis.removeEventListener("keydown", handleKeyDown)
     }
   }, [form])
 
+  const handleClose = () => {
+    setPendingNode(null)
+    form.reset()
+    mutation.reset()
+  }
+
+  const toggleExtraFloor = (floor: number) => {
+    setExtraFloors((prev) =>
+      prev.includes(floor) ? prev.filter((f) => f !== floor) : [...prev, floor],
+    )
+  }
+
+  const header = (
+    <PanelTitle title="Place node" subtitle={`Floor ${String(pendingNode?.floor ?? "-")}`} />
+  )
+
+  const body = (
+    <div className="flex flex-col gap-4 px-4 pb-4">
+      <CoordinateInputs
+        idPrefix="create-coord"
+        xText={xText}
+        yText={yText}
+        onXChange={(text, v) => {
+          setXText(text)
+          if (v !== null && pendingNode) {
+            myXRef.current = v
+            setPendingNode({ ...pendingNode, x: v })
+          }
+        }}
+        onYChange={(text, v) => {
+          setYText(text)
+          if (v !== null && pendingNode) {
+            myYRef.current = v
+            setPendingNode({ ...pendingNode, y: v })
+          }
+        }}
+      />
+
+      <form.Field name="type">
+        {(field) => (
+          <>
+            <NodeTypeSelect
+              id={field.name}
+              value={field.state.value}
+              onChange={(v) => {
+                field.handleChange(v)
+                mutation.reset()
+                if (!TRANSIT_TYPES.has(v)) setExtraFloors([])
+              }}
+            />
+            {TRANSIT_TYPES.has(field.state.value) && floors.length > 1 && pendingNode && (
+              <MultiFloorPicker
+                type={field.state.value}
+                floors={floors}
+                currentFloor={pendingNode.floor}
+                extraFloors={extraFloors}
+                onToggle={toggleExtraFloor}
+              />
+            )}
+          </>
+        )}
+      </form.Field>
+
+      <DetailRow
+        label="Room"
+        value={linkedRoom ? `${linkedRoom.roomNumber} · ${linkedRoom.displayName}` : "None"}
+      />
+
+      <form.Field name="isActivated">
+        {(field) => (
+          <div className="flex-col items-center justify-between">
+            <Label htmlFor={field.name}>Active</Label>
+            <Switch
+              className="mt-3 data-unchecked:border-white/30 data-unchecked:bg-white/15 data-checked:bg-sidebar-primary"
+              id={field.name}
+              checked={field.state.value}
+              onCheckedChange={(v) => {
+                field.handleChange(v)
+              }}
+            />
+          </div>
+        )}
+      </form.Field>
+
+      {mutation.isError && <MutationError error={mutation.error} fallback="Failed to place node" />}
+    </div>
+  )
+
+  const footer = (
+    <div className="flex flex-col gap-2 p-4">
+      <form.Subscribe selector={(s) => ({ canSubmit: s.canSubmit, isSubmitting: s.isSubmitting })}>
+        {({ canSubmit, isSubmitting }) => (
+          <Button
+            className="hover:bg-slate-300"
+            variant="outline"
+            type="submit"
+            disabled={!canSubmit || isSubmitting || mutation.isPending}
+          >
+            {mutation.isPending ? "Saving…" : "Save"}
+          </Button>
+        )}
+      </form.Subscribe>
+      <Button type="button" variant="destructive" onClick={handleClose}>
+        Cancel
+      </Button>
+    </div>
+  )
+
   return (
     <form
-      className="flex h-full flex-col"
       onSubmit={(e) => {
         e.preventDefault()
         void form.handleSubmit()
       }}
     >
-      <PanelHeader
-        title="Place node"
-        subtitle={`Floor ${String(pendingNode?.floor ?? "-")}`}
-        onClose={handleClose}
-      />
-
-      <div className="flex flex-1 flex-col gap-4 px-4">
-        <div className="flex gap-2">
-          <div className="flex flex-1 flex-col gap-1.5">
-            <Label htmlFor="coord-x">X</Label>
-            <Input
-              id="coord-x"
-              className="bg-background text-black focus:ring-offset-2"
-              value={xText}
-              onChange={(e) => {
-                setXText(e.target.value)
-                const v = parseFloat(e.target.value)
-                if (!isNaN(v) && pendingNode) {
-                  myXRef.current = v
-                  setPendingNode({ ...pendingNode, x: v })
-                }
-              }}
-            />
-          </div>
-          <div className="flex flex-1 flex-col gap-1.5">
-            <Label htmlFor="coord-y">Y</Label>
-            <Input
-              id="coord-y"
-              className="bg-background text-black focus:ring-offset-2"
-              value={yText}
-              onChange={(e) => {
-                setYText(e.target.value)
-                const v = parseFloat(e.target.value)
-                if (!isNaN(v) && pendingNode) {
-                  myYRef.current = v
-                  setPendingNode({ ...pendingNode, y: v })
-                }
-              }}
-            />
-          </div>
-        </div>
-
-        <form.Field name="type">
-          {(field) => (
-            <>
-              <FieldWrapper htmlFor={field.name} label="Node type">
-                <Select
-                  value={field.state.value}
-                  onValueChange={(v) => {
-                    if (v) {
-                      field.handleChange(v)
-                      mutation.reset()
-                      if (!TRANSIT_TYPES.has(v)) setExtraFloors([])
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full bg-background text-black">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background text-black">
-                    {nodeTypes.map((t) => (
-                      <SelectItem
-                        className="focus:bg-sidebar-primary/40 cursor-pointer"
-                        key={t}
-                        value={t}
-                      >
-                        {NODE_TYPE_LABELS[t]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FieldWrapper>
-
-              {TRANSIT_TYPES.has(field.state.value) && floors.length > 1 && (
-                <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
-                  <div>
-                    <Label>Place on multiple floors</Label>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      A {NODE_TYPE_LABELS[field.state.value]} node at this position will be created
-                      on each checked floor.
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    {floors
-                      .sort((a, b) => a.floor - b.floor)
-                      .map((f) => {
-                        const isCurrent = f.floor === pendingNode?.floor
-                        const checked = isCurrent || extraFloors.includes(f.floor)
-                        return (
-                          <label
-                            key={f.floor}
-                            className={cn(
-                              "flex items-center gap-2 text-sm",
-                              isCurrent ? "cursor-not-allowed opacity-60" : "cursor-pointer",
-                            )}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              disabled={isCurrent}
-                              onChange={() => {
-                                setExtraFloors((prev) =>
-                                  checked ? prev.filter((n) => n !== f.floor) : [...prev, f.floor],
-                                )
-                              }}
-                            />
-                            Floor {f.floor}
-                            {isCurrent && (
-                              <span className="text-xs text-muted-foreground">— this floor</span>
-                            )}
-                          </label>
-                        )
-                      })}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </form.Field>
-
-        <DetailRow
-          label="Room"
-          value={linkedRoom ? `${linkedRoom.roomNumber} · ${linkedRoom.displayName}` : "None"}
-        />
-
-        <form.Field name="isActivated">
-          {(field) => (
-            <div className="flex-col items-center justify-between">
-              <Label htmlFor={field.name}>Active</Label>
-              <Switch
-                className="mt-3 data-unchecked:border-white/30 data-unchecked:bg-white/15 data-checked:bg-sidebar-primary"
-                id={field.name}
-                checked={field.state.value}
-                onCheckedChange={(v) => {
-                  field.handleChange(v)
-                }}
-              />
-            </div>
-          )}
-        </form.Field>
-
-        {mutation.isError && (
-          <MutationError error={mutation.error} fallback="Failed to place node" />
-        )}
-      </div>
-
-      <footer className="mt-auto flex flex-col gap-2 p-4">
-        <form.Subscribe
-          selector={(s) => ({ canSubmit: s.canSubmit, isSubmitting: s.isSubmitting })}
-        >
-          {({ canSubmit, isSubmitting }) => (
-            <Button
-              className="hover:bg-slate-300"
-              variant="outline"
-              type="submit"
-              disabled={!canSubmit || isSubmitting || mutation.isPending}
-            >
-              {mutation.isPending ? "Saving…" : "Save"}
-            </Button>
-          )}
-        </form.Subscribe>
-        <Button type="button" variant="destructive" onClick={handleClose}>
-          Cancel
-        </Button>
-      </footer>
+      <Panel open onClose={handleClose} header={header} footer={footer}>
+        {body}
+      </Panel>
     </form>
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // Edit form — opens when the user clicks an existing node on the canvas.
-// Shows all values; only type is editable. Supports delete with confirm.
-// ─────────────────────────────────────────────────────────────────────────────
+// Supports reposition, type change, active toggle, transit-floor connections,
+// and delete-with-confirm.
+// ────────────────────────────────────────────────────────────────────────────
 
-const NodeEditForm = ({ nodeId }: { nodeId: string }) => {
+interface DeleteFooterProps {
+  busy: boolean
+  isPending: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}
+
+const DeleteFooter = ({ busy, isPending, onConfirm, onCancel }: DeleteFooterProps) => (
+  <>
+    <p className="text-xs text-destructive">Delete this node? This cannot be undone.</p>
+    <Button type="button" variant="destructive" disabled={busy} onClick={onConfirm}>
+      {isPending ? "Deleting…" : "Confirm delete"}
+    </Button>
+    <Button type="button" variant="outline" onClick={onCancel}>
+      Cancel
+    </Button>
+  </>
+)
+
+interface DefaultFooterProps {
+  busy: boolean
+  saveBusyText: string
+  onAskDelete: () => void
+}
+
+const DefaultFooter = ({ busy, saveBusyText, onAskDelete }: DefaultFooterProps) => (
+  <>
+    <Button className="hover:bg-slate-300" variant="outline" type="submit" disabled={busy}>
+      {saveBusyText}
+    </Button>
+    <Button type="button" variant="destructive" disabled={busy} onClick={onAskDelete}>
+      <Trash2 className="size-4" />
+      Delete node
+    </Button>
+  </>
+)
+
+interface TransitConnectionsProps {
+  type: NodeType
+  groupByFloor: Map<number, { id: string }>
+  currentFloor: number
+  isConnected: (otherNodeId: string) => boolean
+  busy: boolean
+  onToggle: (connect: boolean, floor: number) => void
+  error?: unknown
+}
+
+const TransitConnections = ({
+  type,
+  groupByFloor,
+  currentFloor,
+  isConnected,
+  busy,
+  onToggle,
+  error,
+}: TransitConnectionsProps) => (
+  <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+    <div>
+      <Label>Connections to other floors</Label>
+      <p className="mt-0.5 text-xs text-muted-foreground">
+        Check a floor to add a direct edge from this node to the {NODE_TYPE_LABELS[type]} node
+        there. Uncheck to remove it.
+      </p>
+    </div>
+    <div className="flex flex-col gap-1">
+      {[...groupByFloor.keys()]
+        .filter((floor) => floor !== currentFloor)
+        .sort((a, b) => a - b)
+        .map((floor) => {
+          const floorNode = groupByFloor.get(floor)
+          if (!floorNode) return null
+          const connected = isConnected(floorNode.id)
+          return (
+            <label
+              key={floor}
+              className={cn(
+                "flex items-center gap-2 text-sm",
+                busy ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={connected}
+                disabled={busy}
+                onChange={() => {
+                  onToggle(!connected, floor)
+                }}
+              />
+              Floor {floor}
+              <span
+                className={cn("text-xs", connected ? "text-green-500" : "text-muted-foreground")}
+              >
+                {connected ? "— connected" : "— no edge"}
+              </span>
+            </label>
+          )
+        })}
+    </div>
+    {error !== undefined && <MutationError error={error} fallback="Failed to update connection" />}
+  </div>
+)
+
+const NodeEditPanel = ({ nodeId }: { nodeId: string }) => {
   const { setEditingNodeId } = useMap()
   const queryClient = useQueryClient()
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
-  const { data: allNodes = [] } = useQuery({
-    queryKey: ["nodes"],
-    queryFn: getAllNodesData,
-  })
+  const { data: allNodes = [] } = useQuery({ queryKey: ["nodes"], queryFn: getAllNodesData })
+  const { data: allEdges = [] } = useQuery({ queryKey: ["edges"], queryFn: getAllEdgesData })
   const { data: rooms = [] } = useQuery({ queryKey: ["rooms"], queryFn: getAllRoomsData })
+
   const node = allNodes.find((n) => n.id === nodeId) ?? null
   const linkedRoom = node?.roomId ? (rooms.find((r) => r.id === node.roomId) ?? null) : null
 
@@ -437,38 +593,7 @@ const NodeEditForm = ({ nodeId }: { nodeId: string }) => {
     },
   })
 
-  const form = useForm({
-    defaultValues: { type: node?.type ?? "DEFAULT" },
-    onSubmit: async ({ value }) => {
-      const x = parseFloat(xText)
-      const y = parseFloat(yText)
-      await updateMutation.mutateAsync({
-        type: value.type,
-        x: isNaN(x) ? (node?.x ?? 0) : x,
-        y: isNaN(y) ? (node?.y ?? 0) : y,
-      })
-    },
-  })
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
-        e.preventDefault()
-        void form.handleSubmit()
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown)
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown)
-    }
-  }, [form])
-
-  const { data: allEdges = [] } = useQuery({
-    queryKey: ["edges"],
-    queryFn: getAllEdgesData,
-  })
-
-  // Co-located nodes: same type within 0.1 m XY
+  // Co-located transit nodes: same type, within 0.1m XY of this node.
   const groupNodes = useMemo(() => {
     if (!node || !TRANSIT_TYPES.has(node.type)) return []
     return allNodes.filter(
@@ -477,10 +602,7 @@ const NodeEditForm = ({ nodeId }: { nodeId: string }) => {
   }, [allNodes, node])
 
   const groupByFloor = useMemo(() => new Map(groupNodes.map((n) => [n.floor, n])), [groupNodes])
-
   const groupNodeIds = useMemo(() => new Set(groupNodes.map((n) => n.id)), [groupNodes])
-
-  // Edges that run between co-located nodes only
   const transitEdges = useMemo(
     () => allEdges.filter((e) => groupNodeIds.has(e.fromNodeId) && groupNodeIds.has(e.toNodeId)),
     [allEdges, groupNodeIds],
@@ -518,6 +640,32 @@ const NodeEditForm = ({ nodeId }: { nodeId: string }) => {
     },
   })
 
+  const form = useForm({
+    defaultValues: { type: node?.type ?? "DEFAULT" },
+    onSubmit: async ({ value }) => {
+      const x = Number.parseFloat(xText)
+      const y = Number.parseFloat(yText)
+      await updateMutation.mutateAsync({
+        type: value.type,
+        x: Number.isNaN(x) ? (node?.x ?? 0) : x,
+        y: Number.isNaN(y) ? (node?.y ?? 0) : y,
+      })
+    },
+  })
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault()
+        void form.handleSubmit()
+      }
+    }
+    globalThis.addEventListener("keydown", handleKeyDown)
+    return () => {
+      globalThis.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [form])
+
   if (!node) return null
 
   const handleClose = () => {
@@ -529,247 +677,141 @@ const NodeEditForm = ({ nodeId }: { nodeId: string }) => {
 
   const isBusy = updateMutation.isPending || deleteMutation.isPending
 
+  const header = (
+    <PanelTitle
+      title="Node"
+      subtitle={`Floor ${node.floor} · ${NODE_TYPE_LABELS[node.type] ?? node.type}`}
+    />
+  )
+
+  const body = (
+    <div className="flex flex-col gap-4 px-4 pb-4">
+      <div className="flex flex-col gap-3 rounded-lg border border-border">
+        <CoordinateInputs
+          idPrefix="edit-coord"
+          xText={xText}
+          yText={yText}
+          onXChange={(text, v) => {
+            setXText(text)
+            if (v !== null) {
+              myXRef.current = v
+              patchCache(v, myYRef.current)
+            }
+          }}
+          onYChange={(text, v) => {
+            setYText(text)
+            if (v !== null) {
+              myYRef.current = v
+              patchCache(myXRef.current, v)
+            }
+          }}
+        />
+        <DetailRow label="Floor" value={node.floor} />
+        <div className="flex-col items-center justify-between">
+          <Label htmlFor="isActivated">Active</Label>
+          <Switch
+            className="mt-3 data-unchecked:border-white/30 data-unchecked:bg-white/15 data-checked:bg-sidebar-primary"
+            checked={node.isActivated}
+            onCheckedChange={(v) => {
+              activateMutation.mutate(v)
+            }}
+            disabled={activateMutation.isPending}
+          />
+        </div>
+        <DetailRow
+          label="Room"
+          value={linkedRoom ? `${linkedRoom.roomNumber} · ${linkedRoom.displayName}` : "None"}
+        />
+      </div>
+
+      <form.Field name="type">
+        {(field) => (
+          <NodeTypeSelect
+            id={field.name}
+            value={field.state.value}
+            onChange={(v) => {
+              field.handleChange(v)
+              updateMutation.reset()
+            }}
+          />
+        )}
+      </form.Field>
+
+      {TRANSIT_TYPES.has(node.type) && groupNodes.length > 1 && (
+        <TransitConnections
+          type={node.type}
+          groupByFloor={groupByFloor}
+          currentFloor={node.floor}
+          isConnected={(otherId) => !!findDirectEdge(node.id, otherId)}
+          busy={transitMutation.isPending}
+          onToggle={(connect, floor) => {
+            transitMutation.mutate({ connect, floor })
+          }}
+          error={transitMutation.isError ? transitMutation.error : undefined}
+        />
+      )}
+
+      {updateMutation.isError && (
+        <MutationError error={updateMutation.error} fallback="Failed to save" />
+      )}
+      {deleteMutation.isError && (
+        <MutationError error={deleteMutation.error} fallback="Failed to delete" />
+      )}
+    </div>
+  )
+
+  const footer = (
+    <div className="flex flex-col gap-2 p-4">
+      {confirmingDelete ? (
+        <DeleteFooter
+          busy={isBusy}
+          isPending={deleteMutation.isPending}
+          onConfirm={() => {
+            deleteMutation.mutate()
+          }}
+          onCancel={() => {
+            setConfirmingDelete(false)
+          }}
+        />
+      ) : (
+        <form.Subscribe
+          selector={(s) => ({ canSubmit: s.canSubmit, isSubmitting: s.isSubmitting })}
+        >
+          {({ canSubmit, isSubmitting }) => (
+            <DefaultFooter
+              busy={!canSubmit || isSubmitting || isBusy}
+              saveBusyText={updateMutation.isPending ? "Saving…" : "Save changes"}
+              onAskDelete={() => {
+                setConfirmingDelete(true)
+              }}
+            />
+          )}
+        </form.Subscribe>
+      )}
+    </div>
+  )
+
   return (
     <form
-      className="flex h-full flex-col"
       onSubmit={(e) => {
         e.preventDefault()
         void form.handleSubmit()
       }}
     >
-      <PanelHeader
-        title="Node"
-        subtitle={`Floor ${node.floor} · ${NODE_TYPE_LABELS[node.type] ?? node.type}`}
-        onClose={handleClose}
-      />
-
-      <div className="flex flex-1 flex-col gap-4 px-4">
-        <div className="flex flex-col gap-3 rounded-lg border border-border">
-          <div className="flex gap-2">
-            <div className="flex flex-1 flex-col gap-1.5">
-              <Label htmlFor="edit-coord-x">X</Label>
-              <Input
-                id="edit-coord-x"
-                className="bg-background text-black focus:ring-offset-2"
-                value={xText}
-                onChange={(e) => {
-                  setXText(e.target.value)
-                  const v = parseFloat(e.target.value)
-                  if (!isNaN(v)) {
-                    myXRef.current = v
-                    patchCache(v, myYRef.current)
-                  }
-                }}
-              />
-            </div>
-            <div className="flex flex-1 flex-col gap-1.5">
-              <Label htmlFor="edit-coord-y">Y</Label>
-              <Input
-                id="edit-coord-y"
-                className="bg-background text-black focus:ring-offset-2"
-                value={yText}
-                onChange={(e) => {
-                  setYText(e.target.value)
-                  const v = parseFloat(e.target.value)
-                  if (!isNaN(v)) {
-                    myYRef.current = v
-                    patchCache(myXRef.current, v)
-                  }
-                }}
-              />
-            </div>
-          </div>
-          <DetailRow label="Floor" value={node.floor} />
-          <div className="flex-col items-center justify-between">
-            <Label htmlFor="isActivated">Active</Label>
-            <Switch
-              className="mt-3 data-unchecked:border-white/30 data-unchecked:bg-white/15 data-checked:bg-sidebar-primary"
-              checked={node.isActivated}
-              onCheckedChange={(v) => {
-                activateMutation.mutate(v)
-              }}
-              disabled={activateMutation.isPending}
-            />
-          </div>
-          <DetailRow
-            label="Room"
-            value={linkedRoom ? `${linkedRoom.roomNumber} · ${linkedRoom.displayName}` : "None"}
-          />
-        </div>
-
-        <form.Field name="type">
-          {(field) => (
-            <FieldWrapper htmlFor={field.name} label="Node type">
-              <Select
-                value={field.state.value}
-                onValueChange={(v) => {
-                  if (v) {
-                    field.handleChange(v)
-                    updateMutation.reset()
-                  }
-                }}
-              >
-                <SelectTrigger className="w-full bg-background text-black">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent className="bg-background text-black">
-                  {nodeTypes.map((t) => (
-                    <SelectItem
-                      className="focus:bg-sidebar-primary/40 cursor-pointer"
-                      key={t}
-                      value={t}
-                    >
-                      {NODE_TYPE_LABELS[t]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FieldWrapper>
-          )}
-        </form.Field>
-
-        {TRANSIT_TYPES.has(node.type) && groupNodes.length > 1 && (
-          <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
-            <div>
-              <Label>Connections to other floors</Label>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Check a floor to add a direct edge from this node to the{" "}
-                {NODE_TYPE_LABELS[node.type]} node there. Uncheck to remove it.
-              </p>
-            </div>
-            <div className="flex flex-col gap-1">
-              {[...groupByFloor.keys()]
-                .filter((floor) => floor !== node.floor)
-                .sort((a, b) => a - b)
-                .map((floor) => {
-                  const floorNode = groupByFloor.get(floor)
-                  if (!floorNode) return null
-                  const isConnected = !!findDirectEdge(node.id, floorNode.id)
-                  return (
-                    <label
-                      key={floor}
-                      className={cn(
-                        "flex items-center gap-2 text-sm",
-                        transitMutation.isPending
-                          ? "cursor-not-allowed opacity-50"
-                          : "cursor-pointer",
-                      )}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isConnected}
-                        disabled={transitMutation.isPending}
-                        onChange={() => {
-                          transitMutation.mutate({ connect: !isConnected, floor })
-                        }}
-                      />
-                      Floor {floor}
-                      <span
-                        className={cn(
-                          "text-xs",
-                          isConnected ? "text-green-500" : "text-muted-foreground",
-                        )}
-                      >
-                        {isConnected ? "— connected" : "— no edge"}
-                      </span>
-                    </label>
-                  )
-                })}
-            </div>
-            {transitMutation.isError && (
-              <MutationError error={transitMutation.error} fallback="Failed to update connection" />
-            )}
-          </div>
-        )}
-
-        {updateMutation.isError && (
-          <MutationError error={updateMutation.error} fallback="Failed to save" />
-        )}
-        {deleteMutation.isError && (
-          <MutationError error={deleteMutation.error} fallback="Failed to delete" />
-        )}
-      </div>
-
-      <footer className="mt-auto flex flex-col gap-2 p-4">
-        {confirmingDelete ? (
-          <>
-            <p className="text-xs text-destructive">Delete this node? This cannot be undone.</p>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={isBusy}
-              onClick={() => {
-                deleteMutation.mutate()
-              }}
-            >
-              {deleteMutation.isPending ? "Deleting…" : "Confirm delete"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setConfirmingDelete(false)
-              }}
-            >
-              Cancel
-            </Button>
-          </>
-        ) : (
-          <>
-            <form.Subscribe
-              selector={(s) => ({ canSubmit: s.canSubmit, isSubmitting: s.isSubmitting })}
-            >
-              {({ canSubmit, isSubmitting }) => (
-                <Button
-                  className="hover:bg-slate-300"
-                  variant="outline"
-                  type="submit"
-                  disabled={!canSubmit || isSubmitting || isBusy}
-                >
-                  {updateMutation.isPending ? "Saving…" : "Save changes"}
-                </Button>
-              )}
-            </form.Subscribe>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={isBusy}
-              onClick={() => {
-                setConfirmingDelete(true)
-              }}
-            >
-              <Trash2 className="size-4" />
-              Delete node
-            </Button>
-          </>
-        )}
-      </footer>
+      <Panel open onClose={handleClose} header={header} footer={footer}>
+        {body}
+      </Panel>
     </form>
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Top-level panel
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
+// Top-level dispatcher.
+// ────────────────────────────────────────────────────────────────────────────
 
 export const NodeMetadataPanel = () => {
   const { pendingNode, editingNodeId } = useMap()
-  const open = pendingNode !== null || editingNodeId !== null
-
-  return (
-    <aside
-      aria-hidden={!open}
-      className={cn(
-        "fixed top-0 right-0 z-30 flex h-full w-88 flex-col border-l border-border bg-popover text-popover-foreground shadow-2xl",
-        "transition-transform duration-300 ease-in-out",
-        open ? "translate-x-0" : "translate-x-full pointer-events-none",
-      )}
-    >
-      {editingNodeId ? (
-        <NodeEditForm key={editingNodeId} nodeId={editingNodeId} />
-      ) : pendingNode ? (
-        <NodeCreateForm />
-      ) : null}
-    </aside>
-  )
+  if (editingNodeId) return <NodeEditPanel key={editingNodeId} nodeId={editingNodeId} />
+  if (pendingNode) return <NodeCreatePanel />
+  return null
 }
