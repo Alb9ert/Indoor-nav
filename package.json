@@ -20,7 +20,8 @@
     "lint": "eslint",
     "format": "prettier --check .",
     "check": "prettier --write . && eslint --fix",
-    "ci": "npm run lint && npm run format && npx tsc --noEmit && npm run build"
+    "ci": "npm run lint && npm run format && npx tsc --noEmit && npm run build",
+    "knip": "knip"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -85,6 +86,7 @@
     "eslint-plugin-unicorn": "^63.0.0",
     "globals": "^17.5.0",
     "jsdom": "^29.0.2",
+    "knip": "^6.9.0",
     "prettier": "^3.8.3",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

@@ -8,16 +8,16 @@ import { useMap } from "#/lib/map-context"
 import { useNavigation } from "#/lib/navigation-context"
 import { getAllRoomsData } from "#/server/room.functions"
 
-import type { PersistedRoom } from "#/server/room.server"
+import type { Room } from "#/types/room"
 import type { ReactNode } from "react"
 
 /**
- * PersistedRoom today only has `roomNumber/displayName/type/floor/vertices`,
- * but the UI contract the user is designing to includes an address, faculty,
- * and department. The panel reads them optionally so the view works now and
+ * `Room` today only has `roomNumber/displayName/type/floor/vertices`, but the
+ * UI contract the user is designing to includes an address, faculty, and
+ * department. The panel reads them optionally so the view works now and
  * lights up automatically when the schema gains them.
  */
-type RoomView = PersistedRoom & {
+type RoomView = Room & {
   address?: string
   faculty?: string
   department?: string

@@ -24,8 +24,22 @@ import {
   roomToSearchResultItem,
   type RoomSearchResultItem,
 } from "#/lib/room-format"
+import { polygonCentroid } from "#/lib/three-utils"
 
-import type { NavigationRequest } from "#/lib/navigation-context"
+import type { MapPickedPoint, RoutePreference } from "#/types/navigation"
+import type { Room } from "#/types/room"
+
+/**
+ * Drop a pin at a room's centroid. Used when the user picks a room from the
+ * start results — start must be a node or a free-form coordinate, not a room.
+ *
+ * Room vertices use the three.js floor-plane axes `(x, z)`; map coords use
+ * `(x, y)` where `y = -z`, so the conversion flips the forward axis.
+ */
+const roomToStartPoint = (room: Room): MapPickedPoint => {
+  const c = polygonCentroid(room.vertices)
+  return { x: c.x, y: -c.z, floor: room.floor }
+}
 
 export const NavigationPanel = () => {
   const {
@@ -72,8 +86,13 @@ export const NavigationPanel = () => {
     const { dbId } = item as RoomSearchResultItem
     const room = results.find((r) => r.item.id === dbId)?.item
     if (!room || !activeField) return
-    if (activeField === "start") setStart(room)
-    else setDestination(room)
+    if (activeField === "start") {
+      // A start must be a node or a free-form coordinate (not a room). When
+      // the user picks a room as a start, drop a pin at its centroid.
+      setStart(roomToStartPoint(room))
+    } else {
+      setDestination(room)
+    }
     setActiveField(null)
     setQuery("")
   }
@@ -169,7 +188,7 @@ export const NavigationPanel = () => {
           onValueChange={(next) => {
             // Single-select: ignore the empty case (require one selected).
             const [picked] = next
-            if (picked) setPreference(picked as NavigationRequest["preference"])
+            if (picked) setPreference(picked as RoutePreference)
           }}
           className="mt-4 w-full [&>button]:flex-1"
         >

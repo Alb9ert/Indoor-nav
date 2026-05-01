@@ -6,7 +6,8 @@ import { floorToY, mapPointToThree, polygonCentroid } from "#/lib/three-utils"
 import { MARKER_LIFT } from "./constants"
 import { RingMarker } from "./draw-primitives"
 
-import type { NavigationRequest } from "#/lib/navigation-context"
+import type { NavigationStart } from "#/types/navigation"
+import type { Room } from "#/types/room"
 
 const START_COLOR = "#3b82f6"
 const DESTINATION_COLOR = "#f97316"
@@ -21,7 +22,7 @@ const DESTINATION_COLOR = "#f97316"
  *   (`-y` → three.z), lifted to the floor.
  */
 const navigationValueToThreePosition = (
-  value: NavigationRequest["start"],
+  value: NavigationStart | Room,
 ): [number, number, number] => {
   if ("roomNumber" in value) {
     const c = polygonCentroid(value.vertices)

@@ -7,9 +7,10 @@ import type { OrbitControls as DreiOrbitControls } from "@react-three/drei"
 
 import type { RoomDrawingState } from "#/components/hooks/use-room-drawing-state"
 import type { FloorPlan } from "#/types/floor-plan"
+import type { PendingNode } from "#/types/node"
 import type { ComponentRef, ReactNode, RefObject } from "react"
 
-export type OrbitControlsHandle = ComponentRef<typeof DreiOrbitControls>
+type OrbitControlsHandle = ComponentRef<typeof DreiOrbitControls>
 
 type RenderMode = "2d" | "3d"
 type RoomDrawMode = "polygon" | "rectangle"
@@ -23,14 +24,6 @@ type RoomOverlayMode = "icon" | "none"
  * have to change again.
  */
 export type ActiveTool = "default" | "draw-room" | "edit-room" | "draw-node" | "connect-edge"
-
-export interface PendingNode {
-  x: number
-  y: number
-  z: number
-  floor: number
-  roomId?: string
-}
 
 interface MapContextValue {
   floors: FloorPlan[]

@@ -15,7 +15,7 @@ import { useCanvasPointer } from "../hooks/use-canvas-pointer"
 import { DRAWING_LIFT } from "./constants"
 import { EdgePreview } from "./draw-primitives"
 
-import type { PersistedRoom, RoomVertex } from "#/server/room.server"
+import type { Room, RoomVertex } from "#/types/room"
 
 const ROOM_FILL_OPACITY = 0.6
 const SELECTED_FILL_OPACITY = 0.8
@@ -58,7 +58,7 @@ const buildPolygonGeometry = (vertices: RoomVertex[]): THREE.BufferGeometry => {
 }
 
 interface RoomPolygonProps {
-  room: PersistedRoom
+  room: Room
   active: boolean
   selected: boolean
   editable: boolean

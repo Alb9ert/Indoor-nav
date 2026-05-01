@@ -19,7 +19,7 @@ export const NODE_TYPE_LABELS: Record<string, string> = {
   ENDPOINT: "Endpoint",
 }
 
-export const NODE_TYPES: NodeType[] = ["DEFAULT", "DOOR", "STAIR", "ELEVATOR", "ENDPOINT"]
+const NODE_TYPES: NodeType[] = ["DEFAULT", "DOOR", "STAIR", "ELEVATOR", "ENDPOINT"]
 export const TRANSIT_TYPES = new Set<NodeType>(["STAIR", "ELEVATOR"])
 export const FLOOR_HEIGHT_METERS = 3.25
 
@@ -30,7 +30,7 @@ export const PanelTitle = ({ title, subtitle }: { title: string; subtitle: strin
   </div>
 )
 
-export const FieldWrapper = ({
+const FieldWrapper = ({
   htmlFor,
   label,
   error,

@@ -1,29 +1,18 @@
 import { createContext, useContext, useMemo, useState } from "react"
 
-import type { Node } from "#/generated/prisma/client"
-import type { PersistedRoom } from "#/server/room.server"
-
-export const routePreferences = {
-  SIMPLE: "simple",
-  FAST: "fast",
-  ACCESSIBLE: "accessible",
-} as const
+import type { NavigationStart, RoutePreference } from "#/types/navigation"
+import type { Node } from "#/types/node"
+import type { Room } from "#/types/room"
 
 /**
- * A coordinate the user picked on the map (no node, no room — just a point).
- * Stored in *map* coordinates so it has the same shape as `Node` and can flow
- * through the same conversion helpers.
+ * The runtime navigation request. The wire shape sent to the A* server
+ * (`AstarInput`) is structurally similar but requires a destination with
+ * its `nodes` relation included; we resolve that at call time.
  */
-export interface MapPickedPoint {
-  x: number
-  y: number
-  floor: number
-}
-
-export interface NavigationRequest {
-  preference: keyof typeof routePreferences
-  start: Node | MapPickedPoint | PersistedRoom
-  destination: PersistedRoom
+interface NavigationRequest {
+  preference: RoutePreference
+  start: NavigationStart
+  destination: Room
 }
 
 interface NavigationContextValue {

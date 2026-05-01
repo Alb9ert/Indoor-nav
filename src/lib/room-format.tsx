@@ -1,13 +1,13 @@
 import { getRoomTypeMeta, getRoomTypeOutline } from "#/lib/room-types"
 
 import type { SearchResultItem } from "#/components/ui/search-result-list"
-import type { NavigationRequest } from "#/lib/navigation-context"
-import type { PersistedRoom } from "#/server/room.server"
+import type { NavigationStart } from "#/types/navigation"
+import type { Room } from "#/types/room"
 
 /** Visual separator between roomNumber and displayName in inline labels. */
 const ROOM_LABEL_SEPARATOR = "·"
 
-type RoomLabelInput = Pick<PersistedRoom, "roomNumber" | "displayName">
+type RoomLabelInput = Pick<Room, "roomNumber" | "displayName">
 
 /**
  * Single-line room label for inline display (field values, badges, summaries).
@@ -29,7 +29,7 @@ export const formatRoomLabel = (room: RoomLabelInput): string =>
  * Returns `""` for `null` so it can be dropped straight into a controlled
  * input value.
  */
-export const formatNavigationValue = (value: NavigationRequest["start"] | null): string => {
+export const formatNavigationValue = (value: NavigationStart | Room | null): string => {
   if (!value) return ""
   if ("roomNumber" in value) return formatRoomLabel(value)
   if ("id" in value) return `Node ${value.id.slice(0, 6)}`
@@ -49,7 +49,7 @@ export type RoomSearchResultItem = SearchResultItem & { dbId: string }
  * `dbId` is attached so click handlers can look the room up by primary key
  * instead of re-deriving it from `roomNumber`.
  */
-export const roomToSearchResultItem = (room: PersistedRoom): RoomSearchResultItem => {
+export const roomToSearchResultItem = (room: Room): RoomSearchResultItem => {
   const meta = getRoomTypeMeta(room.type)
   const outline = getRoomTypeOutline(room.type)
   const Icon = meta.icon

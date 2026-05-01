@@ -17,10 +17,10 @@ import { Button } from "#/components/ui/button"
 import { useMap } from "#/lib/map-context"
 import { deleteRoomData, updateRoomMetadataData } from "#/server/room.functions"
 
-import type { PersistedRoom } from "#/server/room.server"
+import type { Room } from "#/types/room"
 
 interface RoomEditPanelProps {
-  room: PersistedRoom
+  room: Room
 }
 
 /**
@@ -59,7 +59,8 @@ export const RoomEditPanel = ({ room }: RoomEditPanelProps) => {
   const form = useForm({
     defaultValues: {
       roomNumber: room.roomNumber,
-      displayName: room.displayName,
+      // Form internals use `string | undefined` for unset; the DB stores `null`.
+      displayName: room.displayName ?? undefined,
       type: room.type,
     },
     onSubmit: async ({ value }) => {
