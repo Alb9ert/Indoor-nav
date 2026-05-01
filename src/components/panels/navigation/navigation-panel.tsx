@@ -24,22 +24,8 @@ import {
   roomToSearchResultItem,
   type RoomSearchResultItem,
 } from "#/lib/room-format"
-import { polygonCentroid } from "#/lib/three-utils"
 
-import type { MapPickedPoint, RoutePreference } from "#/types/navigation"
-import type { Room } from "#/types/room"
-
-/**
- * Drop a pin at a room's centroid. Used when the user picks a room from the
- * start results — start must be a node or a free-form coordinate, not a room.
- *
- * Room vertices use the three.js floor-plane axes `(x, z)`; map coords use
- * `(x, y)` where `y = -z`, so the conversion flips the forward axis.
- */
-const roomToStartPoint = (room: Room): MapPickedPoint => {
-  const c = polygonCentroid(room.vertices)
-  return { x: c.x, y: -c.z, floor: room.floor }
-}
+import type { RoutePreference } from "#/types/navigation"
 
 export const NavigationPanel = () => {
   const {
@@ -51,10 +37,12 @@ export const NavigationPanel = () => {
     setDestination,
     preference,
     setPreference,
+    activeField,
+    setActiveField,
+    pickRoomForActiveField,
   } = useNavigation()
   const { pickingStart, setPickingStart } = useMap()
 
-  const [activeField, setActiveField] = useState<FieldKey | null>(null)
   const [query, setQuery] = useState("")
 
   const { results, isLoading } = useFuzzySearch(query)
@@ -85,15 +73,8 @@ export const NavigationPanel = () => {
   const handlePickRoom = (item: SearchResultItem) => {
     const { dbId } = item as RoomSearchResultItem
     const room = results.find((r) => r.item.id === dbId)?.item
-    if (!room || !activeField) return
-    if (activeField === "start") {
-      // A start must be a node or a free-form coordinate (not a room). When
-      // the user picks a room as a start, drop a pin at its centroid.
-      setStart(roomToStartPoint(room))
-    } else {
-      setDestination(room)
-    }
-    setActiveField(null)
+    if (!room) return
+    pickRoomForActiveField(room)
     setQuery("")
   }
 

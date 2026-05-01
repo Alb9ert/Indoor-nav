@@ -1,10 +1,11 @@
 import { Accessibility, Circle, Crosshair, MapPin, Route, Zap } from "lucide-react"
 
 import type { SearchResultItem } from "#/components/ui/search-result-list"
+import type { FieldKey } from "#/lib/navigation-context"
 import type { RoutePreference } from "#/types/navigation"
 import type { LucideIcon } from "lucide-react"
 
-export type FieldKey = "start" | "destination"
+export type { FieldKey }
 
 export interface FieldConfig {
   key: FieldKey

@@ -6,6 +6,7 @@ import { useCallback, useMemo, useRef, useState } from "react"
 import * as THREE from "three"
 
 import { useMap } from "#/lib/map-context"
+import { useNavigation } from "#/lib/navigation-context"
 import { getRoomTypeMeta, getRoomTypeOutline } from "#/lib/room-types"
 import { floorToY, polygonCentroid } from "#/lib/three-utils"
 import { getAllRoomsData } from "#/server/room.functions"
@@ -211,6 +212,7 @@ export const RoomPolygonsLayer = ({ neighbourOpacityRef }: RoomPolygonsLayerProp
     setViewingRoomId,
     pickingStart,
   } = useMap()
+  const { activeField, pickRoomForActiveField } = useNavigation()
 
   const { data: rooms = [] } = useQuery({
     queryKey: ["rooms"],
@@ -226,15 +228,20 @@ export const RoomPolygonsLayer = ({ neighbourOpacityRef }: RoomPolygonsLayerProp
 
   const isEditing = activeTool === "edit-room"
   const isIdle = activeTool === "default"
+  const isPickingForNav = activeField !== null
   // Rooms are inert while the user is picking a coordinate on the map; clicks
   // would otherwise open the room info drawer on top of the pick overlay.
-  const roomsAreClickable = (isEditing || isIdle) && !pickingStart
+  const roomsAreClickable = (isEditing || isIdle || isPickingForNav) && !pickingStart
 
-  const handleSelect = (id: string) => {
-    if (isEditing) {
-      setEditingRoomId(id)
+  const handleSelect = (room: Room) => {
+    if (isPickingForNav) {
+      // Mirrors the edit-room flow: while the navigation panel has an active
+      // field, clicks populate it directly instead of opening the info drawer.
+      pickRoomForActiveField(room)
+    } else if (isEditing) {
+      setEditingRoomId(room.id)
     } else {
-      setViewingRoomId(id)
+      setViewingRoomId(room.id)
     }
   }
 
@@ -248,7 +255,7 @@ export const RoomPolygonsLayer = ({ neighbourOpacityRef }: RoomPolygonsLayerProp
           selected={room.id === editingRoomId || room.id === viewingRoomId}
           editable={roomsAreClickable && room.floor === currentFloor}
           onSelect={() => {
-            handleSelect(room.id)
+            handleSelect(room)
           }}
           neighbourOpacityRef={neighbourOpacityRef}
         />
