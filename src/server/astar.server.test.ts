@@ -261,4 +261,37 @@ describe("astar", () => {
 
     expect(ids(result)).toEqual(["a", "b"])
   })
+
+  it("routes through a 2643-node grid within 1 second", async () => {
+    const COLS = 51
+    const NODE_COUNT = 2643
+    const nodes: Node[] = []
+
+    for (let i = 0; i < NODE_COUNT; i++) {
+      const col = i % COLS
+      const row = Math.floor(i / COLS)
+      const node = makeNode(`n${i}`, col * 2, row * 2, {
+        type: i === NODE_COUNT - 1 ? "ENDPOINT" : "DEFAULT",
+      })
+      nodes.push(node)
+      graphRef.current.addNode(node)
+    }
+
+    for (let i = 0; i < NODE_COUNT; i++) {
+      const col = i % COLS
+      if (col < COLS - 1 && i + 1 < NODE_COUNT) {
+        graphRef.current.addEdge(makeEdge(`n${i}`, `n${i + 1}`, 2))
+      }
+      if (i + COLS < NODE_COUNT) {
+        graphRef.current.addEdge(makeEdge(`n${i}`, `n${i + COLS}`, 2))
+      }
+    }
+
+    const t0 = performance.now()
+    const result = await astar("FAST_ROUTE", makeDest([nodes[NODE_COUNT - 1]]), nodes[0])
+    const elapsed = performance.now() - t0
+
+    expect(result).not.toBeNull()
+    expect(elapsed).toBeLessThan(1000)
+  }, 10_000)
 })
