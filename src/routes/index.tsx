@@ -13,6 +13,7 @@ import { EdgePanel } from "#/components/panels/edge/edge-panel"
 import { NodePanels } from "#/components/panels/node/node-panels"
 import { RoomInfoPanel } from "#/components/panels/room/room-info-panel"
 import { RoomPanels } from "#/components/panels/room/room-panels"
+import { RoutePlannerPanel } from "#/components/panels/route-planner-panel"
 import { MapScene } from "#/components/threeJS/map-scene"
 import { buttonVariants } from "#/components/ui/button"
 import { TooltipProvider } from "#/components/ui/tooltip"
@@ -76,6 +77,7 @@ const Layout = () => {
         </>
       )}
       <RoomInfoPanel />
+      <RoutePlannerPanel />
     </main>
   )
 }
