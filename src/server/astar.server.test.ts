@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 import { Graph } from "./graph.server"
 
 import type { Node, Edge } from "#/generated/prisma/client"
-import type { AstarInput } from "./astar.functions"
+import type { AstarInput } from "#/types/navigation"
 
 // vi.hoisted runs before vi.mock factories, making graphRef safe to close over
 const graphRef = vi.hoisted(() => ({ current: null as unknown as Graph }))
@@ -95,7 +95,7 @@ describe("astar", () => {
     const a = makeNode("a", 0, 0, { type: "ENDPOINT" })
     graphRef.current.addNode(a)
 
-    const result = await astar("FAST_ROUTE", makeDest([a]), a)
+    const result = await astar("FAST", makeDest([a]), a)
 
     expect(ids(result)).toEqual(["a"])
   })
@@ -107,7 +107,7 @@ describe("astar", () => {
     graphRef.current.addNode(b)
     graphRef.current.addEdge(makeEdge("a", "b", 10))
 
-    const result = await astar("FAST_ROUTE", makeDest([b]), a)
+    const result = await astar("FAST", makeDest([b]), a)
 
     expect(ids(result)).toEqual(["a", "b"])
   })
@@ -122,7 +122,7 @@ describe("astar", () => {
     graphRef.current.addEdge(makeEdge("a", "b", 5))
     graphRef.current.addEdge(makeEdge("b", "c", 5))
 
-    const result = await astar("FAST_ROUTE", makeDest([c]), a)
+    const result = await astar("FAST", makeDest([c]), a)
 
     expect(ids(result)).toEqual(["a", "b", "c"])
   })
@@ -142,7 +142,7 @@ describe("astar", () => {
     graphRef.current.addEdge(makeEdge("a", "c", 1))
     graphRef.current.addEdge(makeEdge("c", "b", 1))
 
-    const result = await astar("FAST_ROUTE", makeDest([b]), a)
+    const result = await astar("FAST", makeDest([b]), a)
 
     expect(ids(result)).toEqual(["a", "c", "b"])
   })
@@ -154,7 +154,7 @@ describe("astar", () => {
     graphRef.current.addNode(b)
     // No edge connecting a to b
 
-    const result = await astar("FAST_ROUTE", makeDest([b]), a)
+    const result = await astar("FAST", makeDest([b]), a)
 
     expect(result).toBeNull()
   })
@@ -166,7 +166,7 @@ describe("astar", () => {
     graphRef.current.addNode(b)
     graphRef.current.addEdge(makeEdge("a", "b", 10))
 
-    const result = await astar("FAST_ROUTE", makeDest([b]), a)
+    const result = await astar("FAST", makeDest([b]), a)
 
     expect(result).toBeNull()
   })
@@ -182,7 +182,7 @@ describe("astar", () => {
     graphRef.current.addEdge(makeEdge("b", "c", 5))
     // Only route to c goes through the deactivated b
 
-    const result = await astar("FAST_ROUTE", makeDest([c]), a)
+    const result = await astar("FAST", makeDest([c]), a)
 
     expect(result).toBeNull()
   })
@@ -194,7 +194,7 @@ describe("astar", () => {
     graphRef.current.addNode(b)
     graphRef.current.addEdge(makeEdge("a", "b", 10, { isActivated: false }))
 
-    const result = await astar("FAST_ROUTE", makeDest([b]), a)
+    const result = await astar("FAST", makeDest([b]), a)
 
     expect(result).toBeNull()
   })
@@ -209,7 +209,7 @@ describe("astar", () => {
     graphRef.current.addEdge(makeEdge("a", "door", 3))
     graphRef.current.addEdge(makeEdge("a", "ep", 6))
 
-    const result = await astar("FAST_ROUTE", makeDest([door, endpoint]), a)
+    const result = await astar("FAST", makeDest([door, endpoint]), a)
 
     expect(ids(result)).toEqual(["a", "ep"])
   })
@@ -228,7 +228,7 @@ describe("astar", () => {
     graphRef.current.addEdge(makeEdge("a", "elev", 1))
     graphRef.current.addEdge(makeEdge("elev", "ep", 1))
 
-    const result = await astar("ACCESIBLE_ROUTE", makeDest([ep]), a)
+    const result = await astar("ACCESSIBLE", makeDest([ep]), a)
 
     expect(ids(result)).toEqual(["a", "elev", "ep"])
   })
@@ -243,13 +243,12 @@ describe("astar", () => {
     graphRef.current.addEdge(makeEdge("a", "stair", 5))
     graphRef.current.addEdge(makeEdge("stair", "ep", 5))
 
-    const result = await astar("ACCESIBLE_ROUTE", makeDest([ep]), a)
+    const result = await astar("ACCESSIBLE", makeDest([ep]), a)
 
     expect(ids(result)).toEqual(["a", "stair", "ep"])
   })
 
   it("finds the closest node when start is given as XYZ coordinates", async () => {
-    // floor: 1 matches z: 1 passed to findClosestNode, which calls getNodesByFloor(z)
     const a = makeNode("a", 0, 0, { floor: 1 })
     const b = makeNode("b", 10, 0, { type: "ENDPOINT", floor: 1 })
     graphRef.current.addNode(a)
@@ -257,7 +256,7 @@ describe("astar", () => {
     graphRef.current.addEdge(makeEdge("a", "b", 10))
 
     // Start point is close to 'a' — should snap to 'a' as the first node
-    const result = await astar("FAST_ROUTE", makeDest([b]), { x: 0.5, y: 0.5, z: 1 })
+    const result = await astar("FAST", makeDest([b]), { x: 0.5, y: 0.5, floor: 1 })
 
     expect(ids(result)).toEqual(["a", "b"])
   })
@@ -288,7 +287,7 @@ describe("astar", () => {
     }
 
     const t0 = performance.now()
-    const result = await astar("FAST_ROUTE", makeDest([nodes[NODE_COUNT - 1]]), nodes[0])
+    const result = await astar("FAST", makeDest([nodes[NODE_COUNT - 1]]), nodes[0])
     const elapsed = performance.now() - t0
 
     expect(result).not.toBeNull()
