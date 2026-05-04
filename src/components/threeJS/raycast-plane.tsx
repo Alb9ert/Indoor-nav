@@ -2,9 +2,8 @@
 import { useTexture } from "@react-three/drei"
 import * as THREE from "three"
 
+import { floorToY } from "#/lib/three-utils"
 import type { ThreeEvent } from "@react-three/fiber"
-
-import { FLOOR_HEIGHT } from "./constants"
 
 import type { FloorPlan } from "#/types/floor-plan"
 
@@ -41,7 +40,7 @@ export const RaycastPlane = ({
   return (
     <mesh
       rotation={[-Math.PI / 2, 0, 0]}
-      position={[0, floor.floor * FLOOR_HEIGHT, 0]}
+      position={[0, floorToY(floor.floor), 0]}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
       onPointerMove={onPointerMove}

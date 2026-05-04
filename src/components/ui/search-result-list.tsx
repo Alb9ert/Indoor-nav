@@ -1,5 +1,6 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { Separator } from "./separator"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -31,14 +32,14 @@ function ResultRow({
   item,
   onItemClick,
   showSeparator = false,
-}: {
+}: Readonly<{
   item: SearchResultItem
   onItemClick?: (item: SearchResultItem) => void
   showSeparator?: boolean
-}) {
+}>) {
   return (
     <li>
-      {showSeparator && <div className="h-px bg-border" aria-hidden="true" />}
+      {showSeparator && <Separator />}
       <button
         type="button"
         onClick={() => onItemClick?.(item)}
@@ -86,7 +87,7 @@ export function SearchResultList({
   onItemClick,
   className,
   bare = false,
-}: SearchResultListProps) {
+}: Readonly<SearchResultListProps>) {
   if (items.length === 0) return null
 
   const content = (

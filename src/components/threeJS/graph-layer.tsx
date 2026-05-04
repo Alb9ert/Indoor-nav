@@ -6,13 +6,14 @@ import * as THREE from "three"
 
 import { useMap } from "#/lib/map-context"
 import { pointStrictlyInsidePolygon } from "#/lib/polygon-validation"
+import { floorToY, lift, mapPointToThree, snapPointToGrid } from "#/lib/three-utils"
 import { getAllEdgesData, getAllNodesData } from "#/server/graph.functions"
 import { getAllRoomsData } from "#/server/room.functions"
 
 import { useCanvasPointer } from "../hooks/use-canvas-pointer"
 import { useSnapToExisting } from "../hooks/use-snap-to-existing"
 
-import { DRAWING_LIFT, FLOOR_HEIGHT, SNAP_RADIUS_METERS } from "./constants"
+import { SNAP_RADIUS_METERS } from "./constants"
 import { EdgePreview, VertexMarker } from "./draw-primitives"
 import { RaycastPlane } from "./raycast-plane"
 
@@ -35,28 +36,11 @@ const SNAP_HALO_RADIUS = 0.22
 const BASE_CAMERA_ZOOM = 60
 const DRAG_THRESHOLD_PX = 5
 
-const lift = (v: THREE.Vector3): [number, number, number] => [v.x, v.y + DRAWING_LIFT, v.z]
-
-const snapPointToGrid = (point: THREE.Vector3, spacing: number, floorY: number): THREE.Vector3 =>
-  new THREE.Vector3(
-    Math.round(point.x / spacing) * spacing,
-    floorY,
-    Math.round(point.z / spacing) * spacing,
-  )
-
 type NodeRecord = Awaited<ReturnType<typeof getAllNodesData>>[number]
 
 /** Clickable, zoom-stable sphere for an existing node. Stops propagation so
  *  the RaycastPlane underneath doesn't also fire and open the create panel. */
-const ClickableNode = ({
-  node,
-  floorY,
-  highlighted,
-}: {
-  node: NodeRecord
-  floorY: number
-  highlighted: boolean
-}) => {
+const ClickableNode = ({ node, highlighted }: { node: NodeRecord; highlighted: boolean }) => {
   const { setEditingNodeId, setPendingNode } = useMap()
   const meshRef = useRef<THREE.Mesh>(null)
   const downRef = useRef<{ x: number; y: number } | null>(null)
@@ -71,7 +55,7 @@ const ClickableNode = ({
   return (
     <mesh
       ref={meshRef}
-      position={[node.x, floorY + DRAWING_LIFT, -node.y]}
+      position={mapPointToThree(node)}
       onPointerDown={(e) => {
         e.stopPropagation()
         downRef.current = { x: e.clientX, y: e.clientY }
@@ -113,7 +97,7 @@ export const GraphLayer = ({ floor }: GraphLayerProps) => {
   } = useMap()
   const [cursor, setCursor] = useState<THREE.Vector3 | null>(null)
 
-  const floorY = floor.floor * FLOOR_HEIGHT
+  const floorY = floorToY(floor.floor)
 
   const applyGridSnap = useCallback(
     (point: THREE.Vector3): THREE.Vector3 => {
@@ -214,10 +198,7 @@ export const GraphLayer = ({ floor }: GraphLayerProps) => {
         return (
           <EdgePreview
             key={edge.id}
-            points={[
-              [a.x, floorY + DRAWING_LIFT, -a.y],
-              [b.x, floorY + DRAWING_LIFT, -b.y],
-            ]}
+            points={[mapPointToThree(a), mapPointToThree(b)]}
             color={edge.isActivated ? "#3b82f6" : "#ef4444"}
             lineWidth={1.5}
           />
@@ -225,17 +206,12 @@ export const GraphLayer = ({ floor }: GraphLayerProps) => {
       })}
 
       {floorNodes.map((node) => (
-        <ClickableNode
-          key={node.id}
-          node={node}
-          floorY={floorY}
-          highlighted={node.id === editingNodeId}
-        />
+        <ClickableNode key={node.id} node={node} highlighted={node.id === editingNodeId} />
       ))}
 
       {pendingNode?.floor === floor.floor && (
         <VertexMarker
-          position={[pendingNode.x, floorY + DRAWING_LIFT, -pendingNode.y]}
+          position={mapPointToThree(pendingNode)}
           color={NODE_HIGHLIGHT_COLOR}
           radius={NODE_RADIUS}
         />

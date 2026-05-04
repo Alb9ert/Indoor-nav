@@ -5,11 +5,11 @@ import { useCallback, useMemo, useRef, useState } from "react"
 import * as THREE from "three"
 
 import { useMap } from "#/lib/map-context"
+import { lift, mapPointToThree } from "#/lib/three-utils"
 import { addEdgeData, getAllEdgesData, getAllNodesData } from "#/server/graph.functions"
 
 import { useCanvasPointer } from "../hooks/use-canvas-pointer"
 
-import { DRAWING_LIFT, FLOOR_HEIGHT } from "./constants"
 import { EdgePreview, VertexMarker } from "./draw-primitives"
 import { RaycastPlane } from "./raycast-plane"
 
@@ -38,15 +38,7 @@ type EdgeRecord = Awaited<ReturnType<typeof getAllEdgesData>>[number]
 
 // Clickable node sphere, selects as edge source or target
 
-const ClickableNodeForEdge = ({
-  node,
-  floorY,
-  color,
-}: {
-  node: NodeRecord
-  floorY: number
-  color: string
-}) => {
+const ClickableNodeForEdge = ({ node, color }: { node: NodeRecord; color: string }) => {
   const { pendingEdgeFromNodeId, setPendingEdgeFromNodeId, setEditingEdgeId } = useMap()
   const queryClient = useQueryClient()
   const meshRef = useRef<THREE.Mesh>(null)
@@ -104,7 +96,7 @@ const ClickableNodeForEdge = ({
   return (
     <mesh
       ref={meshRef}
-      position={[node.x, floorY + DRAWING_LIFT, -node.y]}
+      position={mapPointToThree(node)}
       onPointerDown={(e) => {
         e.stopPropagation()
         downRef.current = { x: e.clientX, y: e.clientY }
@@ -140,14 +132,8 @@ const ClickableEdge = ({
   const { setEditingEdgeId, setPendingEdgeFromNodeId } = useMap()
   const downRef = useRef<{ x: number; y: number } | null>(null)
 
-  const fromY = fromNode.floor * FLOOR_HEIGHT + DRAWING_LIFT
-  const toY = toNode.floor * FLOOR_HEIGHT + DRAWING_LIFT
-
-  const from3D = useMemo(
-    () => new THREE.Vector3(fromNode.x, fromY, -fromNode.y),
-    [fromNode.x, fromNode.y, fromY],
-  )
-  const to3D = useMemo(() => new THREE.Vector3(toNode.x, toY, -toNode.y), [toNode.x, toNode.y, toY])
+  const from3D = useMemo(() => new THREE.Vector3(...mapPointToThree(fromNode)), [fromNode])
+  const to3D = useMemo(() => new THREE.Vector3(...mapPointToThree(toNode)), [toNode])
 
   const { mid, length, quaternion } = useMemo(() => {
     const m = new THREE.Vector3().addVectors(from3D, to3D).multiplyScalar(0.5)
@@ -204,8 +190,6 @@ export const ConnectEdgeLayer = ({ floor }: ConnectEdgeLayerProps) => {
   const { pendingEdgeFromNodeId, editingEdgeId, setPendingEdgeFromNodeId, setEditingEdgeId } =
     useMap()
   const [cursor, setCursor] = useState<THREE.Vector3 | null>(null)
-
-  const floorY = floor.floor * FLOOR_HEIGHT
 
   const { data: allNodes = [] } = useQuery({
     queryKey: ["nodes"],
@@ -299,16 +283,13 @@ export const ConnectEdgeLayer = ({ floor }: ConnectEdgeLayerProps) => {
       })}
 
       {floorNodes.map((node) => (
-        <ClickableNodeForEdge key={node.id} node={node} floorY={floorY} color={nodeColor(node)} />
+        <ClickableNodeForEdge key={node.id} node={node} color={nodeColor(node)} />
       ))}
 
       {/* Preview line from source node to cursor */}
       {sourceNode && cursor && (
         <EdgePreview
-          points={[
-            [sourceNode.x, floorY + DRAWING_LIFT, -sourceNode.y],
-            [cursor.x, floorY + DRAWING_LIFT, cursor.z],
-          ]}
+          points={[mapPointToThree(sourceNode), lift(cursor)]}
           color={EDGE_PREVIEW_COLOR}
           lineWidth={2}
         />
@@ -317,7 +298,7 @@ export const ConnectEdgeLayer = ({ floor }: ConnectEdgeLayerProps) => {
       {/* Halo on source node */}
       {sourceNode && (
         <VertexMarker
-          position={[sourceNode.x, floorY + DRAWING_LIFT, -sourceNode.y]}
+          position={mapPointToThree(sourceNode)}
           color={NODE_HIGHLIGHT_COLOR}
           radius={0.22}
         />

@@ -1,7 +1,7 @@
 import { getGraph } from "./graph.server"
 
 import type { Edge, Node } from "#/generated/prisma/client"
-import type { AstarInput } from "./astar.functions"
+import type { AstarInput } from "#/types/navigation"
 
 const TURN_PENALTY = 1
 const TURN_ANGLE_THRESHOLD = 30 // degrees
@@ -47,14 +47,14 @@ const heuristic = (
   profile: AstarInput["profile"],
   previousEdge?: Edge,
 ): number => {
-  if (profile === "ACCESIBLE_ROUTE" && node.type === "STAIR" && previousEdge) {
+  if (profile === "ACCESSIBLE" && node.type === "STAIR" && previousEdge) {
     const fromNode = graph.nodes.get(previousEdge.fromNodeId)
     if (fromNode && fromNode.floor !== node.floor) return Infinity
   }
 
   let turnPenalty = 0
 
-  if (profile === "SIMPLE_ROUTE" && previousEdge) {
+  if (profile === "SIMPLE" && previousEdge) {
     const fromNode = graph.nodes.get(previousEdge.fromNodeId)
     const toNode = graph.nodes.get(previousEdge.toNodeId)
     if (fromNode && toNode) {
@@ -78,7 +78,7 @@ const findDestinationNode = (destRoom: AstarInput["dest"], startNode: Node): Nod
       const dist = Math.hypot(n.x - startNode.x, n.y - startNode.y, n.z - startNode.z)
       if (dist < bestDist) {
         bestDist = dist
-        bestNode = n as Node
+        bestNode = n
       }
     }
     return bestNode
@@ -101,10 +101,10 @@ export const astar = async (
   // If start position is a node
   let firstNode: Node
   if ("id" in start) {
-    firstNode = start as Node
+    firstNode = start
   } else {
     // If start position is not a node, find the closest node to the start position
-    const closest = await findClosestNode(start.x, start.y, start.z)
+    const closest = await findClosestNode(start.x, start.y, start.floor)
     if (!closest) return null
     firstNode = closest
   }

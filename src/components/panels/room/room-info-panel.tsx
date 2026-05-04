@@ -5,18 +5,19 @@ import { Panel } from "#/components/panels/panel"
 import { Button } from "#/components/ui/button"
 import { RoomTypeBadge } from "#/components/ui/room-type-badge"
 import { useMap } from "#/lib/map-context"
+import { useNavigation } from "#/lib/navigation-context"
 import { getAllRoomsData } from "#/server/room.functions"
 
-import type { PersistedRoom } from "#/server/room.server"
+import type { Room } from "#/types/room"
 import type { ReactNode } from "react"
 
 /**
- * PersistedRoom today only has `roomNumber/displayName/type/floor/vertices`,
- * but the UI contract the user is designing to includes an address, faculty,
- * and department. The panel reads them optionally so the view works now and
+ * `Room` today only has `roomNumber/displayName/type/floor/vertices`, but the
+ * UI contract the user is designing to includes an address, faculty, and
+ * department. The panel reads them optionally so the view works now and
  * lights up automatically when the schema gains them.
  */
-type RoomView = PersistedRoom & {
+type RoomView = Room & {
   address?: string
   faculty?: string
   department?: string
@@ -56,9 +57,9 @@ const RoomInfoBody = ({ room }: { room: RoomView }) => (
   </div>
 )
 
-const RoomInfoFooter = () => (
+const RoomInfoFooter = ({ onStart }: { onStart: () => void }) => (
   <div className="flex flex-col gap-2 border-t border-white/10 p-5">
-    <Button type="button" className="gap-2">
+    <Button type="button" className="gap-2" onClick={onStart}>
       <NavigationIcon className="size-4" />
       Start navigation
     </Button>
@@ -74,6 +75,7 @@ const RoomInfoFooter = () => (
  */
 export const RoomInfoPanel = () => {
   const { viewingRoomId, setViewingRoomId } = useMap()
+  const { setDestination, setNavigationPanelOpen } = useNavigation()
 
   const { data: rooms = [] } = useQuery({
     queryKey: ["rooms"],
@@ -84,6 +86,13 @@ export const RoomInfoPanel = () => {
 
   const open = room != null
 
+  const handleStart = () => {
+    if (!room) return
+    setDestination(room)
+    setViewingRoomId(null)
+    setNavigationPanelOpen(true)
+  }
+
   return (
     <Panel
       open={open}
@@ -91,7 +100,7 @@ export const RoomInfoPanel = () => {
         setViewingRoomId(null)
       }}
       header={room && <RoomInfoHeader room={room} />}
-      footer={<RoomInfoFooter />}
+      footer={<RoomInfoFooter onStart={handleStart} />}
     >
       {room && <RoomInfoBody room={room} />}
     </Panel>

@@ -13,6 +13,7 @@ import { CursorCoordinates } from "./cursor-coordinates"
 import { DrawingLayer } from "./drawing-layer"
 import { FloorPlane } from "./floor-plane"
 import { GraphLayer } from "./graph-layer"
+import { NavigationMarkers } from "./navigation-markers"
 import { RoomPolygonsLayer } from "./room-polygons-layer"
 
 /** Tools whose workflow benefits from seeing the grid. */
@@ -83,6 +84,7 @@ export const MapScene = () => {
         <AdaptiveGrid visible={showGrid} />
         <CursorCoordinates />
         <RoomPolygonsLayer neighbourOpacityRef={neighbourOpacityRef} />
+        <NavigationMarkers />
         {activeTool === "draw-room" && activeFloorPlan && <DrawingLayer floor={activeFloorPlan} />}
         {activeTool === "draw-node" && activeFloorPlan && <GraphLayer floor={activeFloorPlan} />}
         {activeTool === "connect-edge" && activeFloorPlan && (
