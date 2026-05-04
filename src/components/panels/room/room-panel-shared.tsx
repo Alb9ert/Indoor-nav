@@ -36,7 +36,7 @@ interface FieldWrapperProps {
   children: ReactNode
 }
 
-export const FieldWrapper = ({ htmlFor, label, error, children }: FieldWrapperProps) => (
+const FieldWrapper = ({ htmlFor, label, error, children }: FieldWrapperProps) => (
   <div className="flex flex-col gap-1.5">
     <Label htmlFor={htmlFor}>{label}</Label>
     {children}

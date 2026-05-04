@@ -1,7 +1,5 @@
-"use client"
-
 import * as React from "react"
-import { Search } from "lucide-react"
+import { Search, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SearchResultList, type SearchResultItem } from "./search-result-list"
 
@@ -13,6 +11,8 @@ interface SearchBarBaseProps {
   onQueryChange?: (query: string) => void
   /** Called when the search icon / Enter key is pressed (both modes) */
   onSearch?: (query: string) => void
+  /** Called when the input gains focus */
+  onFocus?: () => void
   className?: string
   /** Initial / controlled value */
   value?: string
@@ -35,7 +35,56 @@ interface SearchBarIntegratedProps extends SearchBarBaseProps {
   showResultsWhenEmpty?: boolean
 }
 
-export type SearchBarProps = SearchBarStandaloneProps | SearchBarIntegratedProps
+/**
+ * Field bar – integrated styling (rounded pill) with a customizable leading
+ * icon and no internal dropdown. Use when results are rendered elsewhere
+ * (e.g. in a panel body shared between multiple field instances).
+ */
+interface SearchBarFieldProps extends SearchBarBaseProps {
+  type: "field"
+  /** Leading icon. Defaults to a Search icon. */
+  leadingIcon?: React.ReactNode
+  /** Show a focus ring even when blurred (e.g. while this field owns the active search). */
+  active?: boolean
+  /** When set, renders a trailing X that calls this on click. */
+  onClear?: () => void
+}
+
+export type SearchBarProps =
+  | SearchBarStandaloneProps
+  | SearchBarIntegratedProps
+  | SearchBarFieldProps
+
+// ─── Shared input ─────────────────────────────────────────────────────────────
+
+interface SearchInputProps extends Omit<React.ComponentProps<"input">, "type"> {
+  /** When set, marks the input as a combobox controlling a results dropdown. */
+  combobox?: { expanded: boolean; controlsId?: string }
+}
+
+/**
+ * Bare input shared by all three SearchBar modes. Strips the wrapping
+ * shadcn `Input` borders/shadow/padding so the surrounding pill provides
+ * the visual chrome, and hides the WebKit "x" so we can render our own.
+ */
+const SearchInput = ({ combobox, className, ...props }: SearchInputProps) => (
+  <input
+    type="search"
+    role={combobox ? "combobox" : undefined}
+    aria-expanded={combobox?.expanded}
+    aria-autocomplete={combobox ? "list" : undefined}
+    aria-controls={combobox?.controlsId}
+    className={cn(
+      "flex-1 min-w-0 bg-transparent text-foreground",
+      "placeholder:text-muted-foreground",
+      "text-base leading-6",
+      "focus:outline-none",
+      "[&::-webkit-search-cancel-button]:hidden",
+      className,
+    )}
+    {...props}
+  />
+)
 
 // ─── SearchBar ────────────────────────────────────────────────────────────────
 
@@ -53,7 +102,7 @@ export function SearchBar(props: SearchBarProps) {
   const [isFocused, setIsFocused] = React.useState(false)
   const wrapperRef = React.useRef<HTMLDivElement>(null)
 
-  const query = controlledValue !== undefined ? controlledValue : internalQuery
+  const query = controlledValue ?? internalQuery
 
   // Sync if controlled
   React.useEffect(() => {
@@ -88,6 +137,47 @@ export function SearchBar(props: SearchBarProps) {
     }
   }
 
+  // ── Field mode (rounded pill, custom leading icon, no dropdown) ─────────
+
+  if (props.type === "field") {
+    const { leadingIcon, active, onFocus, onClear } = props
+    return (
+      <div
+        className={cn(
+          "flex items-center gap-3 px-4 py-3",
+          "bg-card rounded-full shadow-md border border-border/60",
+          active && "ring-2 ring-primary/60",
+          className,
+        )}
+      >
+        {leadingIcon ?? (
+          <Search className="w-5 h-5 text-muted-foreground shrink-0" aria-hidden="true" />
+        )}
+        <SearchInput
+          value={query}
+          placeholder={placeholder}
+          aria-label={inputAriaLabel ?? placeholder}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onFocus={() => {
+            setIsFocused(true)
+            onFocus?.()
+          }}
+        />
+        {onClear && query.length > 0 && (
+          <button
+            type="button"
+            onClick={onClear}
+            aria-label="Clear"
+            className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <X className="w-4 h-4" aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    )
+  }
+
   // ── Integrated mode (rounded, dropdown overlays content) ─────────────────
 
   if (props.type === "integrated") {
@@ -108,25 +198,20 @@ export function SearchBar(props: SearchBarProps) {
           {/* Input row */}
           <div className="flex items-center gap-3 px-4 py-3">
             <Search className="w-5 h-5 text-muted-foreground shrink-0" aria-hidden="true" />
-            <input
-              type="search"
+            <SearchInput
               value={query}
-              onChange={handleChange}
-              onFocus={() => setIsFocused(true)}
-              onKeyDown={handleKeyDown}
               placeholder={placeholder}
               aria-label={inputAriaLabel ?? placeholder}
-              aria-expanded={showDropdown}
-              aria-autocomplete="list"
-              aria-controls={showDropdown ? "search-results-dropdown" : undefined}
-              role="combobox"
-              className={cn(
-                "flex-1 min-w-0 bg-transparent text-foreground",
-                "placeholder:text-muted-foreground",
-                "text-base leading-6",
-                "focus:outline-none",
-                "[&::-webkit-search-cancel-button]:hidden",
-              )}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              onFocus={() => {
+                setIsFocused(true)
+                props.onFocus?.()
+              }}
+              combobox={{
+                expanded: showDropdown,
+                controlsId: showDropdown ? "search-results-dropdown" : undefined,
+              }}
             />
           </div>
         </div>
@@ -163,22 +248,14 @@ export function SearchBar(props: SearchBarProps) {
       )}
     >
       <Search className="w-5 h-5 text-muted-foreground shrink-0" aria-hidden="true" />
-      <input
-        type="search"
+      <SearchInput
         value={query}
-        onChange={handleChange}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         aria-label={inputAriaLabel ?? placeholder}
-        className={cn(
-          "flex-1 min-w-0 bg-transparent text-foreground",
-          "placeholder:text-muted-foreground",
-          "text-base leading-6",
-          "focus:outline-none",
-          "[&::-webkit-search-cancel-button]:hidden",
-        )}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
       />
     </div>
   )

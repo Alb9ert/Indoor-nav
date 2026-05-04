@@ -5,7 +5,7 @@ import type { LucideIcon } from "lucide-react"
 
 export type ToolId = Exclude<ActiveTool, null>
 
-export interface ToolMeta {
+interface ToolMeta {
   id: ToolId
   /** Short label shown in tooltips and as the inactive palette hint. */
   label: string

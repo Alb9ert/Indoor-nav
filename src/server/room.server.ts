@@ -2,39 +2,8 @@ import crypto from "node:crypto"
 
 import { prisma } from "#/db"
 
-import type { RoomType } from "#/generated/prisma/enums"
-
-/**
- * A polygon vertex in the floor's local 2D frame, projected from a
- * THREE.Vector3 (where x is the floor's right axis and z is the floor's
- * forward axis — three.js Y is the floor stacking dimension and is dropped).
- */
-export interface RoomVertex {
-  x: number
-  z: number
-}
-
-export interface CreateRoomInput {
-  roomNumber: string
-  displayName?: string
-  type: RoomType
-  floor: number
-  vertices: RoomVertex[]
-}
-
-export interface PersistedRoom {
-  id: string
-  roomNumber: string
-  displayName?: string
-  type: RoomType
-  floor: number
-  /**
-   * Exterior-ring vertices in click order, with the GeoJSON ring closure
-   * dropped (so `vertices[0] !== vertices.at(-1)`). Each entry is in the
-   * floor's local 2D frame matching the projection used by createRoom.
-   */
-  vertices: RoomVertex[]
-}
+import type { RoomType } from "#/types/enums"
+import type { CreateRoom, Room, RoomVertex, UpdateRoomMetadata } from "#/types/room"
 
 /**
  * Build a PostGIS-compatible WKT POLYGON ring from in-floor 2D vertices.
@@ -64,7 +33,7 @@ const buildPolygonWkt = (vertices: RoomVertex[]): string => {
  * Throws on validation failure with a human-readable message that the
  * client can surface in the metadata panel.
  */
-export const createRoom = async (input: CreateRoomInput): Promise<{ id: string }> => {
+export const createRoom = async (input: CreateRoom): Promise<{ id: string }> => {
   const { roomNumber, displayName, type, floor, vertices } = input
 
   if (vertices.length < 3) {
@@ -151,7 +120,7 @@ export const createRoom = async (input: CreateRoomInput): Promise<{ id: string }
 interface RoomGeoJsonRow {
   id: string
   roomNumber: string
-  displayName?: string
+  displayName: string | null
   type: RoomType
   floor: number
   polygonJson: string
@@ -172,7 +141,7 @@ interface PolygonGeoJson {
  * the last coordinate equals the first) is dropped on the way out so the
  * vertices array matches the same shape as createRoom's input.
  */
-export const getAllRooms = async (): Promise<PersistedRoom[]> => {
+export const getAllRooms = async (): Promise<Room[]> => {
   // ST_AsGeoJSON's default precision is 9 decimal digits, which truncates
   // double-precision coordinates and breaks bit-exact snap behavior on the
   // client (a snapped vertex no longer matches the existing corner once
@@ -210,13 +179,6 @@ export const getAllRooms = async (): Promise<PersistedRoom[]> => {
   })
 }
 
-export interface UpdateRoomMetadataInput {
-  id: string
-  roomNumber: string
-  displayName?: string
-  type: RoomType
-}
-
 /**
  * Update only the metadata of a room. Polygon geometry is left untouched —
  * polygon editing is a separate concern (out of scope for this PBI).
@@ -224,9 +186,7 @@ export interface UpdateRoomMetadataInput {
  * Uses the typed Prisma client (no raw SQL) since none of the updated fields
  * are PostGIS-typed.
  */
-export const updateRoomMetadata = async (
-  input: UpdateRoomMetadataInput,
-): Promise<{ id: string }> => {
+export const updateRoomMetadata = async (input: UpdateRoomMetadata): Promise<{ id: string }> => {
   await prisma.room.update({
     where: { id: input.id },
     data: {

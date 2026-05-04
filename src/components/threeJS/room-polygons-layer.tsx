@@ -6,15 +6,17 @@ import { useCallback, useMemo, useRef, useState } from "react"
 import * as THREE from "three"
 
 import { useMap } from "#/lib/map-context"
+import { useNavigation } from "#/lib/navigation-context"
 import { getRoomTypeMeta, getRoomTypeOutline } from "#/lib/room-types"
+import { floorToY, polygonCentroid } from "#/lib/three-utils"
 import { getAllRoomsData } from "#/server/room.functions"
 
 import { useCanvasPointer } from "../hooks/use-canvas-pointer"
 
-import { DRAWING_LIFT, FLOOR_HEIGHT } from "./constants"
+import { DRAWING_LIFT } from "./constants"
 import { EdgePreview } from "./draw-primitives"
 
-import type { PersistedRoom, RoomVertex } from "#/server/room.server"
+import type { Room, RoomVertex } from "#/types/room"
 
 const ROOM_FILL_OPACITY = 0.6
 const SELECTED_FILL_OPACITY = 0.8
@@ -56,19 +58,8 @@ const buildPolygonGeometry = (vertices: RoomVertex[]): THREE.BufferGeometry => {
   return geometry
 }
 
-const computeCentroid = (vertices: RoomVertex[]): { x: number; z: number } => {
-  let sumX = 0
-  let sumZ = 0
-  for (const v of vertices) {
-    sumX += v.x
-    sumZ += v.z
-  }
-  const n = vertices.length
-  return { x: sumX / n, z: sumZ / n }
-}
-
 interface RoomPolygonProps {
-  room: PersistedRoom
+  room: Room
   active: boolean
   selected: boolean
   editable: boolean
@@ -105,9 +96,9 @@ const RoomPolygon = ({
   const fillColor = useMemo(() => getRoomTypeMeta(room.type).color, [room.type])
   const TypeIcon = useMemo(() => getRoomTypeMeta(room.type).icon, [room.type])
   const outlineColor = useMemo(() => getRoomTypeOutline(room.type), [room.type])
-  const centroid = useMemo(() => computeCentroid(room.vertices), [room.vertices])
+  const centroid = useMemo(() => polygonCentroid(room.vertices), [room.vertices])
 
-  const yFill = room.floor * FLOOR_HEIGHT + DRAWING_LIFT
+  const yFill = floorToY(room.floor, DRAWING_LIFT)
   const yOutline = yFill + OUTLINE_LIFT
   const iconPosition = useMemo(
     () => new THREE.Vector3(centroid.x, yOutline, centroid.z),
@@ -219,7 +210,9 @@ export const RoomPolygonsLayer = ({ neighbourOpacityRef }: RoomPolygonsLayerProp
     setEditingRoomId,
     viewingRoomId,
     setViewingRoomId,
+    pickingStart,
   } = useMap()
+  const { activeField, pickRoomForActiveField } = useNavigation()
 
   const { data: rooms = [] } = useQuery({
     queryKey: ["rooms"],
@@ -235,13 +228,20 @@ export const RoomPolygonsLayer = ({ neighbourOpacityRef }: RoomPolygonsLayerProp
 
   const isEditing = activeTool === "edit-room"
   const isIdle = activeTool === "default"
-  const roomsAreClickable = isEditing || isIdle
+  const isPickingForNav = activeField !== null
+  // Rooms are inert while the user is picking a coordinate on the map; clicks
+  // would otherwise open the room info drawer on top of the pick overlay.
+  const roomsAreClickable = (isEditing || isIdle || isPickingForNav) && !pickingStart
 
-  const handleSelect = (id: string) => {
-    if (isEditing) {
-      setEditingRoomId(id)
+  const handleSelect = (room: Room) => {
+    if (isPickingForNav) {
+      // Mirrors the edit-room flow: while the navigation panel has an active
+      // field, clicks populate it directly instead of opening the info drawer.
+      pickRoomForActiveField(room)
+    } else if (isEditing) {
+      setEditingRoomId(room.id)
     } else {
-      setViewingRoomId(id)
+      setViewingRoomId(room.id)
     }
   }
 
@@ -255,7 +255,7 @@ export const RoomPolygonsLayer = ({ neighbourOpacityRef }: RoomPolygonsLayerProp
           selected={room.id === editingRoomId || room.id === viewingRoomId}
           editable={roomsAreClickable && room.floor === currentFloor}
           onSelect={() => {
-            handleSelect(room.id)
+            handleSelect(room)
           }}
           neighbourOpacityRef={neighbourOpacityRef}
         />

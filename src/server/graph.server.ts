@@ -7,7 +7,7 @@ const FLOOR_HEIGHT_METERS = 3.25
 
 let graph: Graph | null = null
 
-export class Graph {
+class Graph {
   nodes: Map<Node["id"], Node>
   adjacency: Map<Node["id"], Edge[]>
 
@@ -205,17 +205,6 @@ export const getAllEdgesInDb = async () => {
   return await prisma.edge.findMany()
 }
 
-export const updateNodeTypeInDb = async (nodeId: string, type: string) => {
-  const updated = await prisma.node.update({
-    where: { id: nodeId },
-    data: { type: type as Node["type"] },
-  })
-  const g = await getGraph()
-  const node = g.nodes.get(nodeId)
-  if (node) node.type = updated.type
-  return updated
-}
-
 export const updateNodeInDb = async (
   nodeId: string,
   data: { type: string; x: number; y: number },
@@ -317,30 +306,6 @@ export const deleteEdgeByIdInDb = async (edgeId: Edge["id"]) => {
   g.deleteEdgeByNodeIds(deleted.fromNodeId, deleted.toNodeId)
 
   return deleted
-}
-
-export const deactivateEdgeByIdinDb = async (edgeId: Edge["id"]) => {
-  const updated = await prisma.edge.update({
-    where: { id: edgeId },
-    data: { isActivated: false },
-  })
-
-  const g = await getGraph()
-  g.deactiveEdgeByNodeIds(updated.fromNodeId, updated.toNodeId)
-
-  return updated
-}
-
-export const activateEdgeByIdInDb = async (edgeId: Edge["id"]) => {
-  const updated = await prisma.edge.update({
-    where: { id: edgeId },
-    data: { isActivated: true },
-  })
-
-  const g = await getGraph()
-  g.activateEdgeByNodeIds(updated.fromNodeId, updated.toNodeId)
-
-  return updated
 }
 
 export const createTransitNodesInDb = async (input: {

@@ -5,8 +5,7 @@ import { useRef } from "react"
 import * as THREE from "three"
 
 import { worldFromPixel } from "#/lib/coordinates"
-
-import { FLOOR_HEIGHT } from "./constants"
+import { floorToY } from "#/lib/three-utils"
 
 import type { FloorPlan } from "#/types/floor-plan"
 
@@ -47,11 +46,7 @@ export const FloorPlane = ({ floor, active, neighbourOpacityRef }: FloorPlanePro
   })
 
   return (
-    <mesh
-      ref={meshRef}
-      rotation={[-Math.PI / 2, 0, 0]}
-      position={[0, floor.floor * FLOOR_HEIGHT, 0]}
-    >
+    <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, floorToY(floor.floor), 0]}>
       <planeGeometry args={[width, height]} />
       <meshBasicMaterial
         ref={materialRef}

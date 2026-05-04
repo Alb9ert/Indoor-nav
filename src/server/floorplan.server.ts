@@ -6,12 +6,6 @@ export const getFloorPlans = async () => {
   })
 }
 
-export const getFloorPlansByFloor = async (floor: number) => {
-  return await prisma.floorPlan.findUnique({
-    where: { floor },
-  })
-}
-
 export const editFloorPlan = (floor: number, calibrationScale?: number, path?: string) =>
   prisma.floorPlan.update({
     where: { floor },

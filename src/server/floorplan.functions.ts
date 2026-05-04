@@ -3,7 +3,7 @@ import { z } from "zod"
 
 import { getFloorPlans, editFloorPlan } from "./floorplan.server"
 
-export const floorPlanEditSchema = z.object({
+const floorPlanEditSchema = z.object({
   floor: z.number(),
   calibrationScale: z.number().optional(),
   path: z.string().optional(),
