@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react"
+import { useRef, useEffect } from "react"
 
 import { Button } from "#/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip"
@@ -12,7 +12,6 @@ interface FloorSelectorProps {
 export const FloorSelector = ({ className }: FloorSelectorProps) => {
   const { floors, currentFloor, setCurrentFloor, isSelectingFloor, setIsSelectingFloor } = useMap()
   const containerRef = useRef<HTMLDivElement>(null)
-  const [expandUpward, setExpandUpward] = useState(true)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -27,36 +26,19 @@ export const FloorSelector = ({ className }: FloorSelectorProps) => {
     }
   }, [setIsSelectingFloor])
 
-  useEffect(() => {
-    const updateDirection = () => {
-      if (!containerRef.current) return
-
-      const rect = containerRef.current.getBoundingClientRect()
-      const availableTop = rect.top
-      const availableBottom = window.innerHeight - rect.bottom
-      const approxOptionsHeight = floors.length * 56 + (floors.length - 1) * 4 + 12
-
-      setExpandUpward(availableTop > approxOptionsHeight || availableTop > availableBottom)
-    }
-
-    updateDirection()
-    window.addEventListener("resize", updateDirection)
-    return () => { window.removeEventListener("resize", updateDirection); }
-  }, [floors.length])
-
   const floorNumbers = floors.map((f) => f.floor).sort((a, b) => a - b)
 
   if (floorNumbers.length === 0) return null
 
   return (
-    <div ref={containerRef} className={cn("relative inline-flex z-100 items-center", className)}>
-      {/* Floor options - expand upward or downward depending on available screen space */}
+    <div
+      ref={containerRef}
+      className={cn("relative inline-flex z-100 flex-col-reverse items-center", className)}
+    >
+      {/* Floor options - expands upward */}
       <div
         className={cn(
-          "absolute left-1/2 z-100 flex gap-1 transition-all duration-200 ease-out",
-          expandUpward
-            ? "bottom-full mb-2 -translate-x-1/2 flex-col-reverse"
-            : "top-full mt-2 -translate-x-1/2 flex-col",
+          "absolute bottom-full mb-2 flex flex-col-reverse gap-1 transition-all duration-200 ease-out",
           isSelectingFloor
             ? "opacity-100 translate-y-0 pointer-events-auto"
             : "opacity-0 translate-y-2 pointer-events-none",
