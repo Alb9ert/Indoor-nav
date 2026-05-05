@@ -24,8 +24,8 @@ import { FloorPlane } from "./floor-plane"
 import { FocusRig } from "./focus-rig"
 import { GraphLayer } from "./graph-layer"
 import { NavigationMarkers } from "./navigation-markers"
-import { OrbitTargetMarker } from "./orbit-target-marker"
 import { NavigationPathLayer } from "./navigation-path-layer"
+import { OrbitTargetMarker } from "./orbit-target-marker"
 import { RoomPolygonsLayer } from "./room-polygons-layer"
 
 /** Tools whose workflow benefits from seeing the grid. */
