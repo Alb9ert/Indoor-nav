@@ -106,7 +106,17 @@ export const EdgePreview = ({
   if (points.length < 2) return null
   const linePoints = closed && points.length >= 3 ? [...points, points[0]] : points
 
-  return <Line points={linePoints} color={color} lineWidth={lineWidth} opacity={opacity} />
+  return (
+    <Line
+      points={linePoints}
+      color={color}
+      lineWidth={lineWidth}
+      opacity={opacity}
+      depthWrite={false} // Prevents transparent lines from "clipping" each other
+      polygonOffset
+      polygonOffsetFactor={1}
+    />
+  )
 }
 
 interface AnimatedPathLineProps {
