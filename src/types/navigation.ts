@@ -49,6 +49,7 @@ const AstarDestinationSchema = z.object({
   floor: z.number().int(),
   nodes: z.array(NodeSchema),
 })
+export type AstarDestination = z.infer<typeof AstarDestinationSchema>
 
 /** Wire shape for an A* request. */
 export const AstarInputSchema = z.object({

@@ -25,6 +25,7 @@ import { FocusRig } from "./focus-rig"
 import { GraphLayer } from "./graph-layer"
 import { NavigationMarkers } from "./navigation-markers"
 import { OrbitTargetMarker } from "./orbit-target-marker"
+import { NavigationPathLayer } from "./navigation-path-layer"
 import { RoomPolygonsLayer } from "./room-polygons-layer"
 
 /** Tools whose workflow benefits from seeing the grid. */
@@ -109,6 +110,7 @@ export const MapScene = () => {
         <RoomPolygonsLayer neighbourOpacityRef={neighbourOpacityRef} />
         <NavigationMarkers />
         <OrbitTargetMarker />
+        <NavigationPathLayer />
         {activeTool === "draw-room" && activeFloorPlan && <DrawingLayer floor={activeFloorPlan} />}
         {activeTool === "draw-node" && activeFloorPlan && <GraphLayer floor={activeFloorPlan} />}
         {activeTool === "connect-edge" && activeFloorPlan && (
