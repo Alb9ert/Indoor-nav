@@ -1,5 +1,6 @@
 /* eslint-disable */
-const CACHE_NAME = "indoor-nav-v1"
+const CACHE_NAME = "indoor-nav-v2"
+const APP_SHELL_URL = "/"
 const PRECACHE_URLS = [
   "/",
   "/manifest.json",
@@ -37,7 +38,15 @@ self.addEventListener("fetch", (event) => {
     return
   }
 
-  if (request.destination === "document" || request.mode === "navigate") {
+  // Navigation requests: network-first, fall back to cached app shell.
+  // Required for Chrome's PWA installability check, which probes the SW
+  // with a navigation request while the network is forced offline.
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(() =>
+        caches.match(APP_SHELL_URL).then((cached) => cached || Response.error()),
+      ),
+    )
     return
   }
 
