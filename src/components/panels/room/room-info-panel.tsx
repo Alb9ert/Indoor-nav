@@ -57,7 +57,15 @@ const RoomInfoBody = ({ room }: { room: RoomView }) => (
   </div>
 )
 
-const RoomInfoFooter = ({ onStart, onStop, hasActivePath }: { onStart: () => void; onStop: () => void; hasActivePath: boolean }) => (
+const RoomInfoFooter = ({
+  onStart,
+  onStop,
+  hasActivePath,
+}: {
+  onStart: () => void
+  onStop: () => void
+  hasActivePath: boolean
+}) => (
   <div className="flex flex-col gap-2 border-t border-white/10 p-5">
     <Button
       type="button"
@@ -120,7 +128,13 @@ export const RoomInfoPanel = () => {
         setDestination(null)
       }}
       header={room && <RoomInfoHeader room={room} />}
-      footer={<RoomInfoFooter onStart={handleStart} onStop={handleStopNavigation} hasActivePath={hasActivePath} />}
+      footer={
+        <RoomInfoFooter
+          onStart={handleStart}
+          onStop={handleStopNavigation}
+          hasActivePath={hasActivePath}
+        />
+      }
     >
       {room && <RoomInfoBody room={room} />}
     </Panel>

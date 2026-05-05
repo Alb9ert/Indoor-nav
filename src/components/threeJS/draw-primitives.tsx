@@ -109,7 +109,6 @@ export const EdgePreview = ({
   return <Line points={linePoints} color={color} lineWidth={lineWidth} opacity={opacity} />
 }
 
-
 interface AnimatedPathLineProps {
   points: readonly (THREE.Vector3 | [number, number, number])[]
   color?: string
@@ -117,22 +116,25 @@ interface AnimatedPathLineProps {
 }
 
 /**
- * animated dashed line for navigation path, with pulsating opacity effect to draw attention. 
+ * animated dashed line for navigation path, with pulsating opacity effect to draw attention.
  * Also renders small vertex markers at each point along the path.
  * Designed to be used in conjunction with a static `EdgePreview` line underneath for a glowing "ghost trail" effect.
- * 
- * The animation is achieved by updating the material opacity of each line segment in a sine wave pattern, 
- * with a phase offset based on the segment's position in the path. 
+ *
+ * The animation is achieved by updating the material opacity of each line segment in a sine wave pattern,
+ * with a phase offset based on the segment's position in the path.
  * This creates a flowing motion along the path.
  */
-export const AnimatedPathLine = ({ points, color = "#ffffff", lineWidth = 2 }: AnimatedPathLineProps) => {
-  const refs = useRef<any[]>([])
+export const AnimatedPathLine = ({
+  points,
+  color = "#ffffff",
+  lineWidth = 2,
+}: AnimatedPathLineProps) => {
+  const refs = useRef<(THREE.Material & { opacity: number })[]>([])
 
   useFrame(({ clock }) => {
-    refs.current.forEach((mat, i) => {
-      if (!mat) return
-      const offset = i / points.length * Math.PI * 2
-      mat.opacity = 0.4 + 1 * Math.abs(Math.sin(clock.elapsedTime * 0.8 - offset))
+    refs.current.forEach((segmentMaterial, i) => {
+      const offset = (i / points.length) * 0.25 * Math.PI * 2
+      segmentMaterial.opacity = 0.4 + 1 * Math.abs(Math.sin(clock.elapsedTime * 0.8 - offset))
     })
   })
 
@@ -153,7 +155,11 @@ export const AnimatedPathLine = ({ points, color = "#ffffff", lineWidth = 2 }: A
       {segments.map((seg, i) => (
         <Line
           key={`anim-${i}`}
-          ref={(el) => { refs.current[i] = el?.material }}
+          ref={(el) => {
+            if (el?.material) {
+              refs.current[i] = el.material
+            }
+          }}
           points={seg}
           color={color}
           lineWidth={lineWidth + 2}

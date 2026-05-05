@@ -18,7 +18,7 @@ export const NavigationPathLayer = () => {
   const pathPoints = useMemo(() => {
     if (!navigationPath || navigationPath.length < 2) return []
     return navigationPath.map((node) =>
-      mapPointToThree({ x: node.x, y: node.y, floor: node.floor }, MARKER_LIFT)
+      mapPointToThree({ x: node.x, y: node.y, floor: node.floor }, MARKER_LIFT),
     )
   }, [navigationPath])
 
@@ -26,9 +26,7 @@ export const NavigationPathLayer = () => {
 
   return (
     <>
-      {/* Ghost trail underneath */}
       <EdgePreview points={pathPoints} color="#4406e0" lineWidth={6} opacity={0.15} />
-      {/* Animated dash overlay */}
       <AnimatedPathLine points={pathPoints} color="#4406e0" lineWidth={5} />
     </>
   )
