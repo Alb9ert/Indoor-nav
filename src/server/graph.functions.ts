@@ -93,10 +93,8 @@ export const createTransitNodesData = createServerFn({ method: "POST" })
     return await createTransitNodesInDb({
       x: data.x,
       y: data.y,
-      z: data.z,
       type: data.type,
       floors: data.floors,
       isActivated: data.isActivated ?? true,
-      roomId: data.roomId,
     })
   })
