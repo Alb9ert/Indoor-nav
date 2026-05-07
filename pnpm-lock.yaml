@@ -82,7 +82,7 @@ importers:
         version: 0.577.0(react@19.2.5)
       nitro:
         specifier: npm:nitro-nightly@3.0.1-20260322-095631-ffdd706a
-        version: nitro-nightly@3.0.1-20260322-095631-ffdd706a(@electric-sql/pglite@0.4.1)(chokidar@4.0.3)(dotenv@17.4.2)(giget@2.0.0)(jiti@2.6.1)(lru-cache@11.3.5)(mysql2@3.15.3)(vite@8.0.9(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0))
+        version: nitro-nightly@3.0.1-20260322-095631-ffdd706a(@electric-sql/pglite@0.4.1)(chokidar@4.0.3)(dotenv@17.4.2)(giget@2.0.0)(jiti@2.6.1)(lru-cache@11.3.5)(mysql2@3.15.3)(vite@8.0.9(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
       polylabel:
         specifier: ^2.0.1
         version: 2.0.1
@@ -4493,6 +4493,10 @@ packages:
   pluralize@8.0.0:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
     engines: {node: '>=4'}
+
+  pngjs@5.0.0:
+    resolution: {integrity: sha512-40QW5YalBNfQo5yRYmiw7Yz6TKKVr3h6970B2YE+3fQpsWcrbj1PzJgxeJ19DRQjhMbKPIuMY8rFaXc8moolVw==}
+    engines: {node: '>=10.13.0'}
 
   polylabel@2.0.1:
     resolution: {integrity: sha512-B6Yu+Bdl/8SGtjVhyUfZzD3DwciCS9SPVtHiNdt8idHHatvTHp5Ss8XGDRmQFtfF1ZQnfK+Cj5dXdpkUXBbXgA==}
@@ -10022,10 +10026,11 @@ snapshots:
 
   pluralize@8.0.0: {}
 
+  pngjs@5.0.0: {}
+
   polylabel@2.0.1:
     dependencies:
       tinyqueue: 3.0.0
-  pngjs@5.0.0: {}
 
   possible-typed-array-names@1.1.0: {}
 
