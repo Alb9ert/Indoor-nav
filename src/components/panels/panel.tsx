@@ -16,8 +16,8 @@ interface PanelProps {
   header?: ReactNode
   /** Sticky footer. Always visible while the panel is open. */
   footer?: ReactNode
-  /** Scrollable body content. */
-  children: ReactNode
+  /** Scrollable body content. If omitted, the mobile drag handle is hidden. */
+  children?: ReactNode
   /** Called when the user clicks the built-in close button. Omit to hide it. */
   onClose?: () => void
   /**
@@ -89,13 +89,17 @@ export const Panel = ({
   }, [header, footer, children])
 
   useLayoutEffect(() => {
+    // visualViewport.height shrinks when the iOS keyboard opens; innerHeight
+    // does not always update on older iOS, causing the panel to overflow.
     const update = () => {
-      setViewportPx(window.innerHeight)
+      setViewportPx(window.visualViewport?.height ?? window.innerHeight)
     }
     update()
     window.addEventListener("resize", update)
+    window.visualViewport?.addEventListener("resize", update)
     return () => {
       window.removeEventListener("resize", update)
+      window.visualViewport?.removeEventListener("resize", update)
     }
   }, [])
 
@@ -117,7 +121,9 @@ export const Panel = ({
     if (open) setHeightPx(null)
   }
 
-  const currentHeight = heightPx ?? (fullHeight ? expandedPx : collapsedPx)
+  // Always clamp to expandedPx so a stale heightPx (set before the keyboard
+  // opened and shrank the viewport) never pushes the panel header off-screen.
+  const currentHeight = Math.min(heightPx ?? (fullHeight ? expandedPx : collapsedPx), expandedPx)
 
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     dragRef.current = { startY: e.clientY, startHeight: currentHeight }
@@ -157,16 +163,18 @@ export const Panel = ({
           : "pointer-events-none translate-y-full md:translate-y-0 md:translate-x-full",
       )}
     >
-      <div
-        ref={handleRef}
-        className="flex shrink-0 cursor-grab touch-none items-center justify-center py-2 active:cursor-grabbing md:hidden"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-      >
-        <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
-      </div>
+      {children != null && (
+        <div
+          ref={handleRef}
+          className="flex shrink-0 cursor-grab touch-none items-center justify-center py-2 active:cursor-grabbing md:hidden"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
+          <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+        </div>
+      )}
       <div ref={headerRef} className="relative shrink-0">
         {header}
         {onClose && (
