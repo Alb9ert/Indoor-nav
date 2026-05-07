@@ -24,6 +24,7 @@ import { FloorPlane } from "./floor-plane"
 import { FocusRig } from "./focus-rig"
 import { GraphLayer } from "./graph-layer"
 import { NavigationMarkers } from "./navigation-markers"
+import { NavigationPathLayer } from "./navigation-path-layer"
 import { OrbitTargetMarker } from "./orbit-target-marker"
 import { RoomPolygonsLayer } from "./room-polygons-layer"
 
@@ -109,6 +110,7 @@ export const MapScene = () => {
         <RoomPolygonsLayer neighbourOpacityRef={neighbourOpacityRef} />
         <NavigationMarkers />
         <OrbitTargetMarker />
+        <NavigationPathLayer />
         {activeTool === "draw-room" && activeFloorPlan && <DrawingLayer floor={activeFloorPlan} />}
         {activeTool === "draw-node" && activeFloorPlan && <GraphLayer floor={activeFloorPlan} />}
         {activeTool === "connect-edge" && activeFloorPlan && (

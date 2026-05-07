@@ -24,6 +24,8 @@ import {
   roomToSearchResultItem,
   type RoomSearchResultItem,
 } from "#/lib/room-format"
+import { astarFunction } from "#/server/astar.functions"
+import { getRoomWithNodesData } from "#/server/room.functions"
 
 import type { RoutePreference } from "#/types/navigation"
 
@@ -40,8 +42,9 @@ export const NavigationPanel = () => {
     activeField,
     setActiveField,
     pickRoomForActiveField,
+    setNavigationPath,
   } = useNavigation()
-  const { pickingStart, setPickingStart } = useMap()
+  const { pickingStart, setPickingStart, setViewingRoomId } = useMap()
 
   const [query, setQuery] = useState("")
 
@@ -93,6 +96,37 @@ export const NavigationPanel = () => {
     setPickingStart(false)
   }
 
+  const handleStart = async () => {
+    if (!start || !destination || !setNavigationPath) return
+
+    try {
+      // Fetch the destination room with its nodes
+      const destinationWithNodes = await getRoomWithNodesData({
+        data: { id: destination.id },
+      })
+      if (!destinationWithNodes) return
+
+      // Call A* to find the route
+      const path = await astarFunction({
+        data: {
+          profile: preference,
+          start,
+          dest: destinationWithNodes,
+        },
+      })
+
+      // Store the path in navigation context
+      if (path) {
+        setNavigationPath(path)
+        // Close the navigation panel and show the room info panel
+        setNavigationPanelOpen(false)
+        setViewingRoomId(destination.id)
+      }
+    } catch (error) {
+      console.error("Error finding route:", error)
+    }
+  }
+
   const canStart = start !== null && destination !== null
 
   const headerText = (() => {
@@ -110,7 +144,15 @@ export const NavigationPanel = () => {
 
   const footer = (
     <div className="border-t border-white/10 p-4">
-      <Button type="button" className="w-full" disabled={!canStart}>
+      <Button
+        type="button"
+        className="w-full"
+        disabled={!canStart}
+        onClick={() => {
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
+          handleStart()
+        }}
+      >
         Start
       </Button>
     </div>

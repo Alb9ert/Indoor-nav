@@ -57,11 +57,24 @@ const RoomInfoBody = ({ room }: { room: RoomView }) => (
   </div>
 )
 
-const RoomInfoFooter = ({ onStart }: { onStart: () => void }) => (
+const RoomInfoFooter = ({
+  onStart,
+  onStop,
+  hasActivePath,
+}: {
+  onStart: () => void
+  onStop: () => void
+  hasActivePath: boolean
+}) => (
   <div className="flex flex-col gap-2 border-t border-white/10 p-5">
-    <Button type="button" className="gap-2" onClick={onStart}>
+    <Button
+      type="button"
+      className="gap-2"
+      variant={hasActivePath ? "destructive" : "default"}
+      onClick={hasActivePath ? onStop : onStart}
+    >
       <NavigationIcon className="size-4" />
-      Start navigation
+      {hasActivePath ? "Stop navigation" : "Start navigation"}
     </Button>
   </div>
 )
@@ -75,14 +88,18 @@ const RoomInfoFooter = ({ onStart }: { onStart: () => void }) => (
  */
 export const RoomInfoPanel = () => {
   const { viewingRoomId, setViewingRoomId } = useMap()
-  const { setDestination, setNavigationPanelOpen } = useNavigation()
+  const { setDestination, setNavigationPanelOpen, navigationPath, setNavigationPath, setStart } =
+    useNavigation()
 
   const { data: rooms = [] } = useQuery({
     queryKey: ["rooms"],
     queryFn: () => getAllRoomsData(),
     enabled: viewingRoomId !== null,
   })
-  const room = viewingRoomId ? (rooms.find((r) => r.id === viewingRoomId) as RoomView) : null
+  const room = viewingRoomId ? (rooms.find((r: Room) => r.id === viewingRoomId) as RoomView) : null
+
+  // Check if there's an active navigation path to this room
+  const hasActivePath = Boolean(navigationPath && navigationPath.length > 0)
 
   const open = room != null
 
@@ -93,14 +110,31 @@ export const RoomInfoPanel = () => {
     setNavigationPanelOpen(true)
   }
 
+  const handleStopNavigation = () => {
+    // Clear the navigation path
+    if (setNavigationPath) {
+      setNavigationPath(undefined)
+      setStart(null)
+    }
+  }
+
   return (
     <Panel
       open={open}
       onClose={() => {
         setViewingRoomId(null)
+        setNavigationPath?.(undefined)
+        setStart(null)
+        setDestination(null)
       }}
       header={room && <RoomInfoHeader room={room} />}
-      footer={<RoomInfoFooter onStart={handleStart} />}
+      footer={
+        <RoomInfoFooter
+          onStart={handleStart}
+          onStop={handleStopNavigation}
+          hasActivePath={hasActivePath}
+        />
+      }
     >
       {room && <RoomInfoBody room={room} />}
     </Panel>
