@@ -55,7 +55,7 @@ export const SELECT_ON_MAP_ITEM: SearchResultItem = {
 
 /**
  * Vertical 3-dot connector between the two field icons. Aligned to the
- * leading-icon column of the SearchBar field variant (px-4 + half icon).
+ * leading-icon column of the SearchField (px-4 + half icon).
  */
 export const DotConnector = () => (
   <div className="flex pl-4 my-2.5">

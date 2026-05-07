@@ -7,6 +7,7 @@ import { useIsMobile } from "#/components/hooks/use-is-mobile"
 import { ActionBar } from "#/components/map/action-bar/action-bar"
 import { FuzzySearchBar } from "#/components/map/search/fuzzy-search-bar"
 import { ToolPalette } from "#/components/map/tool-palette/tool-palette"
+import { AuthToggle } from "#/components/map/user-tools/auth-toggle"
 import { Compass } from "#/components/map/user-tools/compass"
 import { DebugToggle } from "#/components/map/user-tools/debug-toggle"
 import { FloorSelector } from "#/components/map/user-tools/floor-selector"
@@ -97,7 +98,7 @@ const useStartParamHydration = () => {
  */
 const Layout = () => {
   const { isLoggedIn, isPending } = useIsLoggedIn()
-  const { debugMode, pickingStart, activeTool, setActiveTool } = useMap()
+  const { debugMode, pickingStart, activeTool, setActiveTool, viewingRoomId } = useMap()
   const { navigationPanelOpen, setNavigationPanelOpen } = useNavigation()
   const isMobile = useIsMobile()
   const isAdmin = !isPending && isLoggedIn
@@ -133,13 +134,14 @@ const Layout = () => {
           className={`pointer-events-auto absolute flex flex-col gap-2 ${
             actionBarVisible ? "right-6 bottom-28" : "right-6 bottom-6"
           } ${
-            // Desktop: shift left of the right-anchored navigation panel
-            // (md:w-88 = 22rem) so controls stay visible while it's open.
-            navigationPanelOpen && !pickingStart
+            // Desktop: shift left of the right-anchored panel (navigation or
+            // room info, both md:w-88 = 22rem) so controls stay visible.
+            (navigationPanelOpen || viewingRoomId != null) && !pickingStart
               ? "md:right-96 md:bottom-6"
               : "md:right-6 md:bottom-6"
           }`}
         >
+          <AuthToggle />
           {isAdmin && <DebugToggle />}
           <RoomOverlayToggle />
           {!pickingStart && <RenderModeToggle />}
