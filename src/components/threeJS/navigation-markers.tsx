@@ -49,26 +49,14 @@ const navigationValueToPlacement = (value: NavigationStart | Room): MarkerPlacem
  * marker doesn't project onto an unrelated floor's plan.
  */
 export const NavigationMarkers = () => {
-  const { start, destination, navigationPath } = useNavigation()
+  const { start, destination } = useNavigation()
   const { renderMode, currentFloor } = useMap()
 
-  const startPlacement = useMemo(() => {
-    if (!start) return null
-    if (navigationPath && navigationPath.length > 0) {
-      const firstNode = navigationPath[0]
-      return { position: mapPointToThree(firstNode, MARKER_LIFT), floor: firstNode.floor }
-    }
-    return navigationValueToPlacement(start)
-  }, [start, navigationPath])
-
-  const destinationPlacement = useMemo(() => {
-    if (!destination) return null
-    if (navigationPath && navigationPath.length > 0) {
-      const lastNode = navigationPath[navigationPath.length - 1]
-      return { position: mapPointToThree(lastNode, MARKER_LIFT), floor: lastNode.floor }
-    }
-    return navigationValueToPlacement(destination)
-  }, [destination, navigationPath])
+  const startPlacement = useMemo(() => (start ? navigationValueToPlacement(start) : null), [start])
+  const destinationPlacement = useMemo(
+    () => (destination ? navigationValueToPlacement(destination) : null),
+    [destination],
+  )
 
   const isVisibleOnCurrentView = (placement: MarkerPlacement) =>
     renderMode === "3d" || placement.floor === currentFloor
