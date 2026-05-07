@@ -16,6 +16,8 @@ export interface SearchResultItem {
   title: string
   /** Type label – e.g. "Lecture room", "Station" */
   type: string
+  /** Right-aligned secondary label (e.g. "Recent", "Suggested"). */
+  tag?: string
 }
 
 export interface SearchResultListProps {
@@ -75,6 +77,12 @@ function ResultRow({
             </span>
           )}
         </span>
+
+        {item.tag && (
+          <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {item.tag}
+          </span>
+        )}
       </button>
     </li>
   )
