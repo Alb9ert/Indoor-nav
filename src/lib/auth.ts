@@ -17,7 +17,6 @@ export const auth = betterAuth({
 })
 
 async function seedAdmin() {
-  console.log("Seeding admin user...")
   try {
     const ctx = await auth.$context
     const hashedPassword = await ctx.password.hash(env.ADMIN_PASSWORD)
