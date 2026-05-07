@@ -208,11 +208,10 @@ interface RoomPolygonsLayerProps {
 /**
  * Renders every saved room across all floors.
  *
- * - In 2D mode, only the active floor's rooms are rendered (per-floor
- *   layering on a flat top-down view doesn't make sense).
- * - In 3D mode, every room renders; non-active floors fade with the
- *   camera tilt, mirroring how `floor-plane.tsx` already fades non-active
- *   floor rasters via `neighbourOpacityRef`.
+ * - In both 2D and 3D modes, only the active floor's rooms are rendered.
+ * - If the user has a navigation destination on a different floor, that
+ *   single destination room is also rendered and highlighted.
+ *   This keeps the scene focused while still showing the off-floor target.
  *
  * Click behavior branches on the active tool:
  * - `activeTool === "edit-room"` (admin): opens the edit metadata panel.
@@ -221,7 +220,6 @@ interface RoomPolygonsLayerProps {
  */
 export const RoomPolygonsLayer = ({ neighbourOpacityRef }: RoomPolygonsLayerProps) => {
   const {
-    renderMode,
     currentFloor,
     activeTool,
     editingRoomId,
@@ -237,12 +235,15 @@ export const RoomPolygonsLayer = ({ neighbourOpacityRef }: RoomPolygonsLayerProp
     queryFn: () => getAllRoomsData(),
   })
 
+  const offFloorDestinationRoom = useMemo(() => {
+    if (!destination || destination.floor === currentFloor) return null
+    return rooms.find((room) => room.id === destination.id) ?? null
+  }, [rooms, currentFloor, destination])
+
   const visibleRooms = useMemo(() => {
-    if (renderMode === "2d") {
-      return rooms.filter((r) => r.floor === currentFloor)
-    }
-    return rooms
-  }, [rooms, renderMode, currentFloor])
+    const currentFloorRooms = rooms.filter((r) => r.floor === currentFloor)
+    return offFloorDestinationRoom ? [...currentFloorRooms, offFloorDestinationRoom] : currentFloorRooms
+  }, [rooms, currentFloor, offFloorDestinationRoom])
 
   const isEditing = activeTool === "edit-room"
   const isIdle = activeTool === "default"
@@ -269,7 +270,7 @@ export const RoomPolygonsLayer = ({ neighbourOpacityRef }: RoomPolygonsLayerProp
         <RoomPolygon
           key={room.id}
           room={room}
-          active={room.floor === currentFloor}
+          active={room.floor === currentFloor || room.id === destination?.id}
           selected={
             room.id === editingRoomId || room.id === viewingRoomId || room.id === destination?.id
           }
