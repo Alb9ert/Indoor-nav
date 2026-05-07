@@ -134,7 +134,7 @@ const Layout = () => {
 
         <div
           className={`pointer-events-auto absolute flex flex-col items-end gap-2 ${
-            actionBarVisible ? "right-6 bottom-28" : "right-1 bottom-3"
+            actionBarVisible ? "right-6 bottom-28" : "right-3 bottom-3"
           } ${
             // Desktop: shift left of the right-anchored panel (navigation or
             // room info, both md:w-88 = 22rem) so controls stay visible.
