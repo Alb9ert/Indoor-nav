@@ -63,7 +63,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: "#000000",
       },
       {
-        title: "AAU CPH Nav",
+        title: "Find AAU",
       },
     ],
     links: [
