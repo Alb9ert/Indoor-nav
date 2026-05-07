@@ -178,6 +178,11 @@ const RoomPolygon = ({
         geometry={geometry}
         position={[0, yFill, 0]}
         renderOrder={ROOM_RENDER_ORDER}
+        // Per-polygon bounding spheres can fall outside the frustum at
+        // oblique camera angles even when part of the polygon is on-screen,
+        // dropping rooms in clean horizontal bands. Cost of always drawing
+        // these small meshes is negligible compared to the bug.
+        frustumCulled={false}
         {...pointerHandlers}
       >
         <meshBasicMaterial
