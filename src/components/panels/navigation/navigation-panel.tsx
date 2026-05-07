@@ -13,7 +13,7 @@ import {
 } from "#/components/panels/navigation/navigation-panel-shared"
 import { Panel } from "#/components/panels/panel"
 import { Button } from "#/components/ui/button"
-import { SearchBar } from "#/components/ui/search-bar"
+import { SearchField } from "#/components/ui/search-field"
 import { SearchResultList, type SearchResultItem } from "#/components/ui/search-result-list"
 import { Separator } from "#/components/ui/separator"
 import { ToggleGroup, ToggleGroupItem } from "#/components/ui/toggle-group"
@@ -162,8 +162,7 @@ export const NavigationPanel = () => {
     const value = fieldValue(key)
     const isActive = activeField === key
     return (
-      <SearchBar
-        type="field"
+      <SearchField
         leadingIcon={<Icon className="size-5 text-muted-foreground shrink-0" />}
         placeholder={placeholder}
         value={isActive ? query : formatNavigationValue(value)}
