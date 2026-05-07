@@ -25,7 +25,7 @@ const OUTLINE_WIDTH = 5
 /** Tiny extra Y offset above DRAWING_LIFT for the outline so it doesn't z-fight the fill mesh. */
 const OUTLINE_LIFT = 0.002
 const ICON_HIDE_ZOOM_THRESHOLD_2D = 10.5
-const LABEL_SHOW_ZOOM_THRESHOLD_2D = 50
+const LABEL_SHOW_ZOOM_THRESHOLD_2D = 25
 const ICON_HIDE_DISTANCE_THRESHOLD_3D = 45
 const LABEL_SHOW_DISTANCE_THRESHOLD_3D = 28
 /**
