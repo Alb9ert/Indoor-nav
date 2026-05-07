@@ -1,6 +1,6 @@
 import { OrbitControls } from "@react-three/drei"
 import { Canvas } from "@react-three/fiber"
-import { Suspense, useMemo, useRef } from "react"
+import { Suspense, useEffect, useMemo, useRef } from "react"
 import * as THREE from "three"
 
 import { useMap } from "#/lib/map-context"
@@ -40,9 +40,16 @@ export const MapScene = () => {
   const activeFloor = currentFloor ?? 0
   const initialTarget = useMemo(
     () => new THREE.Vector3(0, activeFloor * FLOOR_HEIGHT, 0),
-    [activeFloor],
+    [],
   )
 
+  useEffect(() => {
+  const controls = controlsRef.current
+  if (!controls) return
+
+  controls.target.set(controls.target.x, activeFloor * FLOOR_HEIGHT, controls.target.z)
+  controls.update()
+}, [activeFloor])
   // OrbitControls has built-in modifier-key inversion: with LEFT=PAN, holding
   // Shift/Ctrl/Cmd while left-click-dragging swaps to ROTATE automatically
   // (and vice versa for RIGHT=ROTATE). RIGHT must be explicit — drei applies
