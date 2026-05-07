@@ -58,8 +58,7 @@ export const SearchCombobox = ({
     }
   }, [])
 
-  const showDropdown =
-    isFocused && (showResultsWhenEmpty || value.length > 0) && results.length > 0
+  const showDropdown = isFocused && (showResultsWhenEmpty || value.length > 0) && results.length > 0
 
   return (
     <div ref={wrapperRef} className={cn("relative w-full", className)}>

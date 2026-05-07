@@ -28,7 +28,7 @@ const writeStorage = (ids: string[]): void => {
   }
 }
 
-const shuffled = <T,>(arr: T[]): T[] => {
+const shuffled = <T>(arr: T[]): T[] => {
   const out = [...arr]
   for (let i = out.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
@@ -90,7 +90,8 @@ export const useRecentRooms = (): RecentRoomsResult => {
   const suggestedRooms = useMemo<Room[]>(() => {
     const seen = new Set(recentRooms.map((r) => r.id))
     const candidates = allRooms.filter((r) => !seen.has(r.id))
-    const sameFloor = currentFloor === null ? [] : candidates.filter((r) => r.floor === currentFloor)
+    const sameFloor =
+      currentFloor === null ? [] : candidates.filter((r) => r.floor === currentFloor)
     const others =
       currentFloor === null ? candidates : candidates.filter((r) => r.floor !== currentFloor)
     return [...shuffled(sameFloor), ...shuffled(others)].slice(0, MAX_RECENT_ROOMS)
