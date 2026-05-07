@@ -39,6 +39,19 @@ export const CameraRig = ({ activeFloor, controlsRef, neighbourOpacityRef }: Cam
     const controls = controlsRef.current
     if (!controls) return
 
+    const PAN_LIMIT = 100
+
+    const prevX = controls.target.x
+    const prevZ = controls.target.z
+
+    controls.target.x = THREE.MathUtils.clamp(controls.target.x, -PAN_LIMIT, PAN_LIMIT)
+
+    controls.target.z = THREE.MathUtils.clamp(controls.target.z, -PAN_LIMIT, PAN_LIMIT)
+
+    // Move camera by the same correction amount
+    controls.object.position.x += controls.target.x - prevX
+    controls.object.position.z += controls.target.z - prevZ
+
     // Smoothly re-centre on the active floor
     const targetY = activeFloor * FLOOR_HEIGHT
     controls.target.y = THREE.MathUtils.lerp(controls.target.y, targetY, LERP_SPEED)
