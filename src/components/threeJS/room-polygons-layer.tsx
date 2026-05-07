@@ -25,7 +25,9 @@ const OUTLINE_WIDTH = 5
 /** Tiny extra Y offset above DRAWING_LIFT for the outline so it doesn't z-fight the fill mesh. */
 const OUTLINE_LIFT = 0.002
 const ICON_HIDE_ZOOM_THRESHOLD_2D = 10.5
+const LABEL_SHOW_ZOOM_THRESHOLD_2D = 50
 const ICON_HIDE_DISTANCE_THRESHOLD_3D = 45
+const LABEL_SHOW_DISTANCE_THRESHOLD_3D = 28
 /**
  * Render after FloorPlane (which sets renderOrder=1 on the active floor).
  * Without this, the floor texture paints over the polygon fill because
@@ -109,6 +111,8 @@ const RoomPolygon = ({
   const materialRef = useRef<THREE.MeshBasicMaterial>(null)
   const [iconVisible, setIconVisible] = useState(true)
   const iconVisibleRef = useRef(true)
+  const [labelVisible, setLabelVisible] = useState(false)
+  const labelVisibleRef = useRef(false)
 
   const geometry = useMemo(() => buildPolygonGeometry(room.vertices), [room.vertices])
   const fillColor = useMemo(() => getRoomTypeMeta(room.type).color, [room.type])
@@ -157,17 +161,27 @@ const RoomPolygon = ({
     }
 
     let shouldShowIcon = roomOverlayMode === "icon" && active
+    let shouldShowLabel = false
+
     if (shouldShowIcon) {
       if ((camera as THREE.OrthographicCamera).isOrthographicCamera) {
-        shouldShowIcon = (camera as THREE.OrthographicCamera).zoom >= ICON_HIDE_ZOOM_THRESHOLD_2D
+        const zoom = (camera as THREE.OrthographicCamera).zoom
+        shouldShowIcon = zoom >= ICON_HIDE_ZOOM_THRESHOLD_2D
+        shouldShowLabel = zoom >= LABEL_SHOW_ZOOM_THRESHOLD_2D
       } else {
-        shouldShowIcon = camera.position.distanceTo(iconPosition) <= ICON_HIDE_DISTANCE_THRESHOLD_3D
+        const dist = camera.position.distanceTo(iconPosition)
+        shouldShowIcon = dist <= ICON_HIDE_DISTANCE_THRESHOLD_3D
+        shouldShowLabel = dist <= LABEL_SHOW_DISTANCE_THRESHOLD_3D
       }
     }
 
     if (shouldShowIcon !== iconVisibleRef.current) {
       iconVisibleRef.current = shouldShowIcon
       setIconVisible(shouldShowIcon)
+    }
+    if (shouldShowLabel !== labelVisibleRef.current) {
+      labelVisibleRef.current = shouldShowLabel
+      setLabelVisible(shouldShowLabel)
     }
   })
 
@@ -202,9 +216,12 @@ const RoomPolygon = ({
           zIndexRange={[0, 0]}
           pointerEvents="none"
         >
-          <div className="rounded-full bg-black/60 p-1.5 text-white">
-            <TypeIcon className="size-4" />
-          </div>
+    <div className="pointer-events-none flex items-center gap-1 rounded-lg bg-black/60 px-2 py-1 text-xs font-semibold text-white whitespace-nowrap">
+      <TypeIcon className="size-3" />
+      {labelVisible && (
+        <span>{room.displayName === "" ? room.roomNumber : room.displayName}</span>
+      )}
+    </div>
         </Html>
       )}
     </>
