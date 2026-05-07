@@ -196,8 +196,13 @@ const RoomPolygon = ({
       </mesh>
       <EdgePreview points={outlinePoints} color={outlineColor} lineWidth={OUTLINE_WIDTH} closed />
       {active && roomOverlayMode === "icon" && iconVisible && (
-        <Html position={[iconAnchor.x, yOutline, iconAnchor.z]} center zIndexRange={[0, 0]}>
-          <div className="pointer-events-none rounded-full bg-black/60 p-1.5 text-white">
+        <Html
+          position={[iconAnchor.x, yOutline, iconAnchor.z]}
+          center
+          zIndexRange={[0, 0]}
+          pointerEvents="none"
+        >
+          <div className="rounded-full bg-black/60 p-1.5 text-white">
             <TypeIcon className="size-4" />
           </div>
         </Html>
