@@ -2,13 +2,14 @@
 import { Html } from "@react-three/drei"
 import { useFrame, useThree } from "@react-three/fiber"
 import { useQuery } from "@tanstack/react-query"
+import polylabel from "polylabel"
 import { useCallback, useMemo, useRef, useState } from "react"
 import * as THREE from "three"
 
 import { useMap } from "#/lib/map-context"
 import { useNavigation } from "#/lib/navigation-context"
 import { getRoomTypeMeta, getRoomTypeOutline } from "#/lib/room-types"
-import { floorToY, polygonCentroid } from "#/lib/three-utils"
+import { floorToY } from "#/lib/three-utils"
 import { getAllRoomsData } from "#/server/room.functions"
 
 import { useCanvasPointer } from "../hooks/use-canvas-pointer"
@@ -58,6 +59,23 @@ const buildPolygonGeometry = (vertices: RoomVertex[]): THREE.BufferGeometry => {
   return geometry
 }
 
+const computeCentroid = (vertices: RoomVertex[]): { x: number; z: number } => {
+  const n = vertices.length
+  return {
+    x: vertices.reduce((sum, v) => sum + v.x, 0) / n,
+    z: vertices.reduce((sum, v) => sum + v.z, 0) / n,
+  }
+}
+
+const computeIconAnchor = (vertices: RoomVertex[]): { x: number; z: number } => {
+  if (vertices.length < 3) return computeCentroid(vertices)
+
+  const outerRing = vertices.map((v) => [v.x, v.z] as [number, number])
+  const [x, z] = polylabel([outerRing], 0.25)
+
+  return { x, z }
+}
+
 interface RoomPolygonProps {
   room: Room
   active: boolean
@@ -96,13 +114,13 @@ const RoomPolygon = ({
   const fillColor = useMemo(() => getRoomTypeMeta(room.type).color, [room.type])
   const TypeIcon = useMemo(() => getRoomTypeMeta(room.type).icon, [room.type])
   const outlineColor = useMemo(() => getRoomTypeOutline(room.type), [room.type])
-  const centroid = useMemo(() => polygonCentroid(room.vertices), [room.vertices])
+  const iconAnchor = useMemo(() => computeIconAnchor(room.vertices), [room.vertices])
 
   const yFill = floorToY(room.floor, DRAWING_LIFT)
   const yOutline = yFill + OUTLINE_LIFT
   const iconPosition = useMemo(
-    () => new THREE.Vector3(centroid.x, yOutline, centroid.z),
-    [centroid.x, centroid.z, yOutline],
+    () => new THREE.Vector3(iconAnchor.x, yOutline, iconAnchor.z),
+    [iconAnchor.x, iconAnchor.z, yOutline],
   )
 
   // Outline points (open ring) projected to 3D at the outline Y level.
@@ -173,7 +191,7 @@ const RoomPolygon = ({
       </mesh>
       <EdgePreview points={outlinePoints} color={outlineColor} lineWidth={OUTLINE_WIDTH} closed />
       {active && roomOverlayMode === "icon" && iconVisible && (
-        <Html position={[centroid.x, yOutline, centroid.z]} center zIndexRange={[0, 0]}>
+        <Html position={[iconAnchor.x, yOutline, iconAnchor.z]} center zIndexRange={[0, 0]}>
           <div className="pointer-events-none rounded-full bg-black/60 p-1.5 text-white">
             <TypeIcon className="size-4" />
           </div>
