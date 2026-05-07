@@ -158,7 +158,9 @@ const Layout = () => {
               type="button"
               aria-label={mobileExpanded ? "Collapse controls" : "Expand controls"}
               className="max-sm:size-12"
-              onClick={() => { setMobileExpanded((v) => !v); }}
+              onClick={() => {
+                setMobileExpanded((v) => !v)
+              }}
             >
               <ChevronUp
                 className={`size-4 transition-transform duration-200${mobileExpanded ? " rotate-180" : ""}`}
