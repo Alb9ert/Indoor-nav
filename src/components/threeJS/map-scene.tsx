@@ -38,10 +38,11 @@ export const MapScene = () => {
   const neighbourOpacityRef = useRef(0)
 
   const activeFloor = currentFloor ?? 0
-  const initialTarget = useMemo(
-    () => new THREE.Vector3(0, activeFloor * FLOOR_HEIGHT, 0),
-    [activeFloor],
-  )
+  // Mount-only: re-creating this Vector3 on floor change would make drei copy
+  // it onto controls.target, snapping x/z back to 0 and shifting the orbit
+  // pivot. CameraRig owns the per-frame y-lerp toward the active floor.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const initialTarget = useMemo(() => new THREE.Vector3(0, activeFloor * FLOOR_HEIGHT, 0), [])
 
   // OrbitControls has built-in modifier-key inversion: with LEFT=PAN, holding
   // Shift/Ctrl/Cmd while left-click-dragging swaps to ROTATE automatically
