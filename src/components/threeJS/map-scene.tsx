@@ -6,6 +6,7 @@ import * as THREE from "three"
 import { useMap } from "#/lib/map-context"
 
 import { AdaptiveGrid } from "./adaptive-grid"
+import { CameraConfig } from "./camera-config"
 import { CameraRig } from "./camera-rig"
 import { ConnectEdgeLayer } from "./connect-edge-layer"
 import {
@@ -60,9 +61,9 @@ export const MapScene = () => {
 
   return (
     <Canvas
-      gl={{ antialias: true }}
+      gl={{ antialias: true, logarithmicDepthBuffer: true }}
       scene={{ background: new THREE.Color("#333") }}
-      camera={{ fov: 60, near: 0.1, far: 1000, position: [0, 50, 0], zoom: 5 }}
+      camera={{ fov: 60, near: 0.001, far: 200, position: [0, 50, 0], zoom: 5 }}
       style={{
         width: "100%",
         height: "100%",
@@ -70,6 +71,7 @@ export const MapScene = () => {
       }}
       orthographic={renderMode === "2d"}
     >
+      <CameraConfig />
       <CameraRig
         activeFloor={activeFloor}
         controlsRef={controlsRef}
@@ -85,7 +87,12 @@ export const MapScene = () => {
         enablePan
         enableZoom
         enableRotate
-        screenSpacePanning
+        // Pan along the world XZ plane instead of the screen plane. With the
+        // screen-space variant, panning while tilted drags the orbit target's
+        // Y off the active floor faster than CameraRig can lerp it back —
+        // putting the camera at unexpected heights relative to the floor
+        // planes, which manifests as clipping at oblique angles.
+        screenSpacePanning={false}
         mouseButtons={mouseButtons}
         touches={{ ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE }}
         minPolarAngle={renderMode === "2d" ? TOP_DOWN_POLAR : MIN_3D_POLAR_ANGLE}
