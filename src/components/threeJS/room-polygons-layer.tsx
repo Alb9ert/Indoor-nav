@@ -216,12 +216,12 @@ const RoomPolygon = ({
           zIndexRange={[0, 0]}
           pointerEvents="none"
         >
-    <div className="pointer-events-none flex items-center gap-1 rounded-lg bg-black/60 px-2 py-1 text-xs font-semibold text-white whitespace-nowrap">
-      <TypeIcon className="size-3" />
-      {labelVisible && (
-        <span>{room.displayName === "" ? room.roomNumber : room.displayName}</span>
-      )}
-    </div>
+          <div className="pointer-events-none flex items-center gap-1 rounded-lg bg-black/60 px-2 py-1 text-xs font-semibold text-white whitespace-nowrap">
+            <TypeIcon className="size-3" />
+            {labelVisible && (
+              <span>{room.displayName === "" ? room.roomNumber : room.displayName}</span>
+            )}
+          </div>
         </Html>
       )}
     </>
