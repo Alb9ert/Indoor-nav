@@ -7,8 +7,8 @@ import { RoomTypeBadge } from "#/components/ui/room-type-badge"
 import { useMap } from "#/lib/map-context"
 import { useNavigation } from "#/lib/navigation-context"
 import { getAllRoomsData } from "#/server/room.functions"
-import type { Room } from "#/types/room"
 
+import type { Room } from "#/types/room"
 import type { ReactNode } from "react"
 
 /**
