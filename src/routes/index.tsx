@@ -7,6 +7,7 @@ import { useIsMobile } from "#/components/hooks/use-is-mobile"
 import { ActionBar } from "#/components/map/action-bar/action-bar"
 import { FuzzySearchBar } from "#/components/map/search/fuzzy-search-bar"
 import { ToolPalette } from "#/components/map/tool-palette/tool-palette"
+import { AuthToggle } from "#/components/map/user-tools/auth-toggle"
 import { Compass } from "#/components/map/user-tools/compass"
 import { DebugToggle } from "#/components/map/user-tools/debug-toggle"
 import { FloorSelector } from "#/components/map/user-tools/floor-selector"
@@ -140,6 +141,7 @@ const Layout = () => {
               : "md:right-6 md:bottom-6"
           }`}
         >
+          <AuthToggle />
           {isAdmin && <DebugToggle />}
           <RoomOverlayToggle />
           {!pickingStart && <RenderModeToggle />}
