@@ -242,7 +242,9 @@ export const RoomPolygonsLayer = ({ neighbourOpacityRef }: RoomPolygonsLayerProp
 
   const visibleRooms = useMemo(() => {
     const currentFloorRooms = rooms.filter((r) => r.floor === currentFloor)
-    return offFloorDestinationRoom ? [...currentFloorRooms, offFloorDestinationRoom] : currentFloorRooms
+    return offFloorDestinationRoom
+      ? [...currentFloorRooms, offFloorDestinationRoom]
+      : currentFloorRooms
   }, [rooms, currentFloor, offFloorDestinationRoom])
 
   const isEditing = activeTool === "edit-room"
