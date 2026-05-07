@@ -9,7 +9,8 @@ import { roomToSearchResultItem } from "#/lib/room-format"
 import { getRoomTypeMeta, getRoomTypeOutline } from "#/lib/room-types"
 import { getAllRoomsData } from "#/server/room.functions"
 
-import { SearchBar } from "../components/ui/search-bar"
+import { SearchCombobox } from "../components/ui/search-combobox"
+import { SearchInputBar } from "../components/ui/search-input-bar"
 import { SearchResultList, type SearchResultItem } from "../components/ui/search-result-list"
 
 // ─── Demo data ────────────────────────────────────────────────────────────────
@@ -84,10 +85,9 @@ const DemoPage = () => {
             id="integrated-heading"
             className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3"
           >
-            SearchBar — type=&quot;integrated&quot;
+            SearchCombobox
           </h2>
-          <SearchBar
-            type="integrated"
+          <SearchCombobox
             placeholder="Search locations..."
             value={integratedQuery}
             onQueryChange={setIntegratedQuery}
@@ -110,10 +110,9 @@ const DemoPage = () => {
             id="standalone-heading"
             className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3"
           >
-            SearchBar — type=&quot;standalone&quot;
+            SearchInputBar
           </h2>
-          <SearchBar
-            type="standalone"
+          <SearchInputBar
             placeholder="Search..."
             value={standaloneQuery}
             onQueryChange={setStandaloneQuery}
