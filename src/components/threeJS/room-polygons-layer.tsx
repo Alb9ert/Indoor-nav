@@ -2,14 +2,14 @@
 import { Html } from "@react-three/drei"
 import { useFrame, useThree } from "@react-three/fiber"
 import { useQuery } from "@tanstack/react-query"
+import polylabel from "polylabel"
 import { useCallback, useMemo, useRef, useState } from "react"
 import * as THREE from "three"
-import polylabel from "polylabel"
 
 import { useMap } from "#/lib/map-context"
 import { useNavigation } from "#/lib/navigation-context"
 import { getRoomTypeMeta, getRoomTypeOutline } from "#/lib/room-types"
-import { floorToY, polygonCentroid } from "#/lib/three-utils"
+import { floorToY } from "#/lib/three-utils"
 import { getAllRoomsData } from "#/server/room.functions"
 
 import { useCanvasPointer } from "../hooks/use-canvas-pointer"
