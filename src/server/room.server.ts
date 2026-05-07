@@ -3,6 +3,7 @@ import crypto from "node:crypto"
 import { prisma } from "#/db"
 
 import type { RoomType } from "#/types/enums"
+import type { AstarDestination } from "#/types/navigation"
 import type { CreateRoom, Room, RoomVertex, UpdateRoomMetadata } from "#/types/room"
 
 /**
@@ -209,4 +210,16 @@ export const updateRoomMetadata = async (input: UpdateRoomMetadata): Promise<{ i
 export const deleteRoom = async (id: string): Promise<{ id: string }> => {
   await prisma.room.delete({ where: { id } })
   return { id }
+}
+
+/**
+ * Fetch a room with all its nodes included. Used for A* pathfinding where
+ * the destination needs its nodes to find suitable entry/exit points.
+ */
+export const getRoomWithNodes = async (id: string): Promise<AstarDestination | null> => {
+  const room = await prisma.room.findUnique({
+    where: { id },
+    include: { nodes: true },
+  })
+  return room ?? null
 }

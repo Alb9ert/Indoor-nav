@@ -83,6 +83,7 @@ interface EdgePreviewProps {
   points: readonly (THREE.Vector3 | [number, number, number])[]
   color?: string
   lineWidth?: number
+  opacity?: number
   /** When true, appends the first point to the end so the polyline closes. */
   closed?: boolean
 }
@@ -99,10 +100,82 @@ export const EdgePreview = ({
   points,
   color = "#ffffff",
   lineWidth = 2,
+  opacity = 1,
   closed = false,
 }: EdgePreviewProps) => {
   if (points.length < 2) return null
   const linePoints = closed && points.length >= 3 ? [...points, points[0]] : points
 
-  return <Line points={linePoints} color={color} lineWidth={lineWidth} />
+  return (
+    <Line
+      points={linePoints}
+      color={color}
+      lineWidth={lineWidth}
+      opacity={opacity}
+      depthWrite={false} // Prevents transparent lines from "clipping" each other
+      polygonOffset
+      polygonOffsetFactor={1}
+    />
+  )
+}
+
+interface AnimatedPathLineProps {
+  points: readonly (THREE.Vector3 | [number, number, number])[]
+  color?: string
+  lineWidth?: number
+}
+
+/**
+ * animated dashed line for navigation path, with pulsating opacity effect to draw attention.
+ * Also renders small vertex markers at each point along the path.
+ * Designed to be used in conjunction with a static `EdgePreview` line underneath for a glowing "ghost trail" effect.
+ *
+ * The animation is achieved by updating the material opacity of each line segment in a sine wave pattern,
+ * with a phase offset based on the segment's position in the path.
+ * This creates a flowing motion along the path.
+ */
+export const AnimatedPathLine = ({
+  points,
+  color = "#ffffff",
+  lineWidth = 2,
+}: AnimatedPathLineProps) => {
+  const refs = useRef<(THREE.Material & { opacity: number })[]>([])
+
+  useFrame(({ clock }) => {
+    refs.current.forEach((segmentMaterial, i) => {
+      const offset = (i / points.length) * 0.25 * Math.PI * 2
+      segmentMaterial.opacity = 0.4 + 1 * Math.abs(Math.sin(clock.elapsedTime * 0.8 - offset))
+    })
+  })
+
+  const segments = points.slice(0, -1).map((pt, i) => [pt, points[i + 1]] as const)
+
+  return (
+    <>
+      {segments.map((seg, i) => (
+        <Line
+          key={i}
+          points={seg}
+          color={color}
+          lineWidth={lineWidth + 2}
+          transparent
+          opacity={0.3}
+        />
+      ))}
+      {segments.map((seg, i) => (
+        <Line
+          key={`anim-${i}`}
+          ref={(el) => {
+            if (el?.material) {
+              refs.current[i] = el.material
+            }
+          }}
+          points={seg}
+          color={color}
+          lineWidth={lineWidth + 2}
+          transparent
+        />
+      ))}
+    </>
+  )
 }
