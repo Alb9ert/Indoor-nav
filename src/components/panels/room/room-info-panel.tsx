@@ -8,8 +8,9 @@ import { useMap } from "#/lib/map-context"
 import { useNavigation } from "#/lib/navigation-context"
 import { getAllRoomsData } from "#/server/room.functions"
 
-import type { Room } from "#/types/room"
 import { PREFERENCE_OPTIONS } from "../navigation/navigation-panel-shared"
+
+import type { Room } from "#/types/room"
 
 /**
  * `Room` today only has `roomNumber/displayName/type/floor/vertices`, but the
@@ -60,7 +61,8 @@ const RouteInfoBody = ({
       <div className="flex items-center gap-2">
         <NavigationIcon className="size-4 text-popover-foreground/60" />
         <span className="text-sm text-popover-foreground">
-          {(distance / WALKING_SPEED_M_PER_S / 60).toFixed(2)} min walk
+          {Math.floor(distance / WALKING_SPEED_M_PER_S / 60)}m &nbsp;
+          {Math.round((distance / WALKING_SPEED_M_PER_S) % 60)}s walk
         </span>
       </div>
       <div className="flex items-center gap-2">
