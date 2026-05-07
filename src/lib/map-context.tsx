@@ -18,7 +18,7 @@ type RenderMode = "2d" | "3d"
 type RoomDrawMode = "polygon" | "rectangle"
 type RoomOverlayMode = "icon" | "none"
 
-type FocusTargetPoint = {
+interface FocusTargetPoint {
   x: number
   y: number
   floor: number

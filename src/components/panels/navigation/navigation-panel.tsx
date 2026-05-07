@@ -24,11 +24,11 @@ import {
   roomToSearchResultItem,
   type RoomSearchResultItem,
 } from "#/lib/room-format"
-import type { Node } from "#/types/node"
 import { astarFunction } from "#/server/astar.functions"
 import { getRoomWithNodesData } from "#/server/room.functions"
 
 import type { RoutePreference } from "#/types/navigation"
+import type { Node } from "#/types/node"
 
 export const NavigationPanel = () => {
   const {
@@ -45,14 +45,8 @@ export const NavigationPanel = () => {
     pickRoomForActiveField,
     setNavigationPath,
   } = useNavigation()
-  const {
-    pickingStart,
-    setPickingStart,
-    setViewingRoomId,
-    focusTarget,
-    renderMode,
-    currentFloor,
-  } = useMap()
+  const { pickingStart, setPickingStart, setViewingRoomId, focusTarget, renderMode, currentFloor } =
+    useMap()
 
   const [query, setQuery] = useState("")
 
@@ -108,9 +102,7 @@ export const NavigationPanel = () => {
     if (path.length === 0) return
 
     const floorNodes =
-      renderMode === "3d"
-        ? path
-        : path.filter((node) => node.floor === currentFloor)
+      renderMode === "3d" ? path : path.filter((node) => node.floor === currentFloor)
 
     const visibleNodes = floorNodes.length > 0 ? floorNodes : [path[0]]
     const minX = Math.min(...visibleNodes.map((node) => node.x))
