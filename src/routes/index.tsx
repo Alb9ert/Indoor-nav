@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { useEffect, useRef } from "react"
+import { ChevronUp } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 import { z } from "zod"
 
 import { useIsMobile } from "#/components/hooks/use-is-mobile"
@@ -20,7 +21,7 @@ import { NodePanels } from "#/components/panels/node/node-panels"
 import { RoomInfoPanel } from "#/components/panels/room/room-info-panel"
 import { RoomPanels } from "#/components/panels/room/room-panels"
 import { MapScene } from "#/components/threeJS/map-scene"
-import { buttonVariants } from "#/components/ui/button"
+import { Button, buttonVariants } from "#/components/ui/button"
 import { TooltipProvider } from "#/components/ui/tooltip"
 import { useIsLoggedIn } from "#/lib/auth-hooks"
 import { MapProvider, useMap } from "#/lib/map-context"
@@ -101,6 +102,7 @@ const Layout = () => {
   const { debugMode, pickingStart, activeTool, setActiveTool, viewingRoomId } = useMap()
   const { navigationPanelOpen, setNavigationPanelOpen } = useNavigation()
   const isMobile = useIsMobile()
+  const [mobileExpanded, setMobileExpanded] = useState(false)
   const isAdmin = !isPending && isLoggedIn
   const showAdminUI = isAdmin && (!isMobile || debugMode)
 
@@ -131,8 +133,8 @@ const Layout = () => {
         )}
 
         <div
-          className={`pointer-events-auto absolute flex flex-col gap-2 ${
-            actionBarVisible ? "right-6 bottom-28" : "right-6 bottom-6"
+          className={`pointer-events-auto absolute flex flex-col items-end gap-2 ${
+            actionBarVisible ? "right-6 bottom-28" : "right-3 bottom-3"
           } ${
             // Desktop: shift left of the right-anchored panel (navigation or
             // room info, both md:w-88 = 22rem) so controls stay visible.
@@ -141,12 +143,32 @@ const Layout = () => {
               : "md:right-6 md:bottom-6"
           }`}
         >
-          <AuthToggle />
-          {isAdmin && <DebugToggle />}
-          <RoomOverlayToggle />
-          {!pickingStart && <RenderModeToggle />}
-          <Compass />
-          <FloorSelector />
+          {(!isMobile || mobileExpanded) && (
+            <>
+              <AuthToggle className="max-sm:size-12" />
+              {isAdmin && <DebugToggle />}
+              <RoomOverlayToggle className="max-sm:size-12" />
+              <Compass className="max-sm:size-12" />
+            </>
+          )}
+          {isMobile && (
+            <Button
+              variant="floating"
+              size="icon-xl"
+              type="button"
+              aria-label={mobileExpanded ? "Collapse controls" : "Expand controls"}
+              className="max-sm:size-12"
+              onClick={() => {
+                setMobileExpanded((v) => !v)
+              }}
+            >
+              <ChevronUp
+                className={`size-4 transition-transform duration-200${mobileExpanded ? " rotate-180" : ""}`}
+              />
+            </Button>
+          )}
+          {!pickingStart && <RenderModeToggle className="max-sm:size-12" />}
+          <FloorSelector buttonClassName="max-sm:size-12" />
         </div>
 
         {showAdminUI && (

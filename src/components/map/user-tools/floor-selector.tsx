@@ -7,9 +7,10 @@ import { cn } from "@/lib/utils"
 
 interface FloorSelectorProps {
   className?: string
+  buttonClassName?: string
 }
 
-export const FloorSelector = ({ className }: FloorSelectorProps) => {
+export const FloorSelector = ({ className, buttonClassName }: FloorSelectorProps) => {
   const { floors, currentFloor, setCurrentFloor, isSelectingFloor, setIsSelectingFloor } = useMap()
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -80,6 +81,7 @@ export const FloorSelector = ({ className }: FloorSelectorProps) => {
               type="button"
               aria-label="Change floor"
               aria-pressed={isSelectingFloor}
+              className={buttonClassName}
               onClick={() => {
                 setIsSelectingFloor(!isSelectingFloor)
               }}
