@@ -1,10 +1,12 @@
 import { Html } from "@react-three/drei"
+import { useQuery } from "@tanstack/react-query"
 import { CircleDot, MapPin } from "lucide-react"
 import { useMemo } from "react"
 
 import { useMap } from "#/lib/map-context"
 import { useNavigation } from "#/lib/navigation-context"
 import { floorToY, mapPointToThree, polygonCentroid } from "#/lib/three-utils"
+import { getAllRoomsData } from "#/server/room.functions"
 
 import { MARKER_LIFT } from "./constants"
 
@@ -49,8 +51,18 @@ const navigationValueToPlacement = (value: NavigationStart | Room): MarkerPlacem
  * marker doesn't project onto an unrelated floor's plan.
  */
 export const NavigationMarkers = () => {
-  const { start, destination, navigationPath } = useNavigation()
-  const { renderMode, currentFloor } = useMap()
+  const { start, destination } = useNavigation()
+  const { renderMode, currentFloor, editingRoomId, viewingRoomId } = useMap()
+
+  const { data: rooms = [] } = useQuery({
+    queryKey: ["rooms"],
+    queryFn: () => getAllRoomsData(),
+  })
+
+  const highlightedRoom = useMemo(() => {
+    const highlightedId = editingRoomId || viewingRoomId
+    return highlightedId ? rooms.find((room) => room.id === highlightedId) : null
+  }, [rooms, editingRoomId, viewingRoomId])
 
   const startPlacement = useMemo(() => {
     if (!start) return null
@@ -69,6 +81,11 @@ export const NavigationMarkers = () => {
     }
     return navigationValueToPlacement(destination)
   }, [destination, navigationPath])
+
+  const highlightedRoomPlacement = useMemo(() => {
+    if (!highlightedRoom) return null
+    return navigationValueToPlacement(highlightedRoom)
+  }, [highlightedRoom])
 
   const isVisibleOnCurrentView = (placement: MarkerPlacement) =>
     renderMode === "3d" || placement.floor === currentFloor
@@ -93,6 +110,22 @@ export const NavigationMarkers = () => {
           />
         </Html>
       )}
+
+      {highlightedRoomPlacement &&
+        isVisibleOnCurrentView(highlightedRoomPlacement) &&
+        !destination && (
+          <Html
+            position={highlightedRoomPlacement.position}
+            center
+            zIndexRange={[0, 0]}
+            pointerEvents="none"
+          >
+            <MapPin
+              className="size-9 -translate-y-1/2 text-red-500 drop-shadow-lg"
+              strokeWidth={2.5}
+            />
+          </Html>
+        )}
     </>
   )
 }
