@@ -7,6 +7,7 @@ import { RoomTypeBadge } from "#/components/ui/room-type-badge"
 import { useMap } from "#/lib/map-context"
 import { useNavigation } from "#/lib/navigation-context"
 import { getAllRoomsData } from "#/server/room.functions"
+
 import { PREFERENCE_OPTIONS } from "../navigation/navigation-panel-shared"
 
 import type { Room } from "#/types/room"
