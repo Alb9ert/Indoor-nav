@@ -24,6 +24,7 @@ import {
   roomToSearchResultItem,
   type RoomSearchResultItem,
 } from "#/lib/room-format"
+import type { Node } from "#/types/node"
 import { astarFunction } from "#/server/astar.functions"
 import { getRoomWithNodesData } from "#/server/room.functions"
 
@@ -44,7 +45,14 @@ export const NavigationPanel = () => {
     pickRoomForActiveField,
     setNavigationPath,
   } = useNavigation()
-  const { pickingStart, setPickingStart, setViewingRoomId } = useMap()
+  const {
+    pickingStart,
+    setPickingStart,
+    setViewingRoomId,
+    focusTarget,
+    renderMode,
+    currentFloor,
+  } = useMap()
 
   const [query, setQuery] = useState("")
 
@@ -96,6 +104,31 @@ export const NavigationPanel = () => {
     setPickingStart(false)
   }
 
+  const focusRouteToBounds = (path: Node[]) => {
+    if (path.length === 0) return
+
+    const floorNodes =
+      renderMode === "3d"
+        ? path
+        : path.filter((node) => node.floor === currentFloor)
+
+    const visibleNodes = floorNodes.length > 0 ? floorNodes : [path[0]]
+    const minX = Math.min(...visibleNodes.map((node) => node.x))
+    const maxX = Math.max(...visibleNodes.map((node) => node.x))
+    const minY = Math.min(...visibleNodes.map((node) => node.y))
+    const maxY = Math.max(...visibleNodes.map((node) => node.y))
+    const centerX = (minX + maxX) / 2
+    const centerY = (minY + maxY) / 2
+    const targetSpan = Math.max(maxX - minX, maxY - minY, 1) * 1.6
+
+    focusTarget({
+      x: centerX,
+      y: centerY,
+      floor: visibleNodes[0].floor,
+      targetSpan,
+    })
+  }
+
   const handleStart = async () => {
     if (!start || !destination || !setNavigationPath) return
 
@@ -115,9 +148,10 @@ export const NavigationPanel = () => {
         },
       })
 
-      // Store the path in navigation context
+      // Store the path in navigation context and focus the rendered route.
       if (path) {
         setNavigationPath(path)
+        focusRouteToBounds(path)
         // Close the navigation panel and show the room info panel
         setNavigationPanelOpen(false)
         setViewingRoomId(destination.id)

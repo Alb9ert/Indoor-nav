@@ -18,6 +18,13 @@ type RenderMode = "2d" | "3d"
 type RoomDrawMode = "polygon" | "rectangle"
 type RoomOverlayMode = "icon" | "none"
 
+type FocusTargetPoint = {
+  x: number
+  y: number
+  floor: number
+  targetSpan?: number
+}
+
 /**
  * The currently active map-editing tool, or null if none.
  *
@@ -121,7 +128,7 @@ interface MapContextValue {
    *
    * Rooms get a fit-to-bbox zoom; nodes/points get a fixed close-up zoom.
    */
-  focusTarget: (target: Room | Node | { x: number; y: number; floor: number }) => void
+  focusTarget: (target: Room | Node | FocusTargetPoint) => void
 }
 
 /**
@@ -265,12 +272,11 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
       return
     }
 
-    // Node or free-form point — both expose (x, y, floor) in map coords;
-    // map y → world -z. ~8m around the point is a sensible close-up.
+    const pointTarget = target as FocusTargetPoint
     focusRequestRef.current = {
-      worldX: target.x,
-      worldZ: -target.y,
-      targetSpan: 8,
+      worldX: pointTarget.x,
+      worldZ: -pointTarget.y,
+      targetSpan: pointTarget.targetSpan ?? 8,
     }
   }, [])
 
