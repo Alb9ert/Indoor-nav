@@ -270,7 +270,7 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
     focusRequestRef.current = {
       worldX: target.x,
       worldZ: -target.y,
-      targetSpan: 8,
+      targetSpan: 120,
     }
   }, [])
 
