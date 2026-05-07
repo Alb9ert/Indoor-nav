@@ -64,11 +64,23 @@ export const NavigationMarkers = () => {
     return highlightedId ? rooms.find((room) => room.id === highlightedId) : null
   }, [rooms, editingRoomId, viewingRoomId])
 
-  const startPlacement = useMemo(() => (start ? navigationValueToPlacement(start) : null), [start])
-  const destinationPlacement = useMemo(
-    () => (destination ? navigationValueToPlacement(destination) : null),
-    [destination],
-  )
+  const startPlacement = useMemo(() => {
+    if (!start) return null
+    if (navigationPath && navigationPath.length > 0) {
+      const firstNode = navigationPath[0]
+      return { position: mapPointToThree(firstNode, MARKER_LIFT), floor: firstNode.floor }
+    }
+    return navigationValueToPlacement(start)
+  }, [start, navigationPath])
+
+  const destinationPlacement = useMemo(() => {
+    if (!destination) return null
+    if (navigationPath && navigationPath.length > 0) {
+      const lastNode = navigationPath[navigationPath.length - 1]
+      return { position: mapPointToThree(lastNode, MARKER_LIFT), floor: lastNode.floor }
+    }
+    return navigationValueToPlacement(destination)
+  }, [destination, navigationPath])
 
   const highlightedRoomPlacement = useMemo(() => {
     if (!highlightedRoom) return null

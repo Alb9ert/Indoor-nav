@@ -263,12 +263,14 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
         if (v.z < minZ) minZ = v.z
         if (v.z > maxZ) maxZ = v.z
       }
-      // World-units to fit on the smaller viewport axis. 1.6× pad on the
-      // longest side keeps the room comfortably framed instead of edge-to-
-      // edge. FocusRig converts this to the right zoom (ortho) or distance
-      // (perspective) using the camera's actual frustum.
+      // World-units to fit on the smaller viewport axis. Use a larger padding
+      // factor so room search/selection doesn't zoom in as tightly.
       const longest = Math.max(maxX - minX, maxZ - minZ, 1)
-      focusRequestRef.current = { worldX: c.x, worldZ: c.z, targetSpan: longest * 1.6 }
+      focusRequestRef.current = {
+        worldX: c.x,
+        worldZ: c.z,
+        targetSpan: Math.max(longest * 2.4, 12),
+      }
       return
     }
 

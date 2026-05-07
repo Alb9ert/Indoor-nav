@@ -6,7 +6,6 @@ import * as THREE from "three"
 import { useMap } from "#/lib/map-context"
 
 import { AdaptiveGrid } from "./adaptive-grid"
-import { CameraConfig } from "./camera-config"
 import { CameraRig } from "./camera-rig"
 import { ConnectEdgeLayer } from "./connect-edge-layer"
 import {
@@ -61,9 +60,9 @@ export const MapScene = () => {
 
   return (
     <Canvas
-      gl={{ antialias: true, logarithmicDepthBuffer: true }}
+      gl={{ antialias: true }}
       scene={{ background: new THREE.Color("#333") }}
-      camera={{ fov: 60, near: 0.001, far: 200, position: [0, 50, 0], zoom: 5 }}
+      camera={{ fov: 60, near: 0.1, far: 1000, position: [0, 50, 0], zoom: 5 }}
       style={{
         width: "100%",
         height: "100%",
@@ -71,7 +70,6 @@ export const MapScene = () => {
       }}
       orthographic={renderMode === "2d"}
     >
-      <CameraConfig />
       <CameraRig
         activeFloor={activeFloor}
         controlsRef={controlsRef}
