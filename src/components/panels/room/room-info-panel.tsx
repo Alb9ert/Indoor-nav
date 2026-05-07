@@ -8,8 +8,9 @@ import { useMap } from "#/lib/map-context"
 import { useNavigation } from "#/lib/navigation-context"
 import { getAllRoomsData } from "#/server/room.functions"
 
-import type { Room } from "#/types/room"
 import type { ReactNode } from "react"
+
+import type { Room } from "#/types/room"
 
 /**
  * `Room` today only has `roomNumber/displayName/type/floor/vertices`, but the
