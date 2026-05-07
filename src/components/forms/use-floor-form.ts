@@ -10,11 +10,11 @@ export const ACCEPTED_IMAGE_TYPES = {
   "image/png": [".png"],
   "image/jpeg": [".jpg", ".jpeg"],
 }
-export const MAX_FILE_SIZE = 10 * 1024 * 1024
+const MAX_FILE_SIZE = 10 * 1024 * 1024
 
 type UploadState = "idle" | "uploading" | "success" | "error"
 
-export const formSchema = z.object({
+const formSchema = z.object({
   file: z
     .instanceof(File, { message: "Please upload an image" })
     .refine((f) => f.size <= MAX_FILE_SIZE, "Image must be 10 MB or smaller")

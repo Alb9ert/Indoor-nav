@@ -49,7 +49,7 @@ interface RoomTypeMeta {
   icon: LucideIcon
 }
 
-export const ROOM_TYPE_META: Record<RoomType, RoomTypeMeta> = {
+const ROOM_TYPE_META: Record<RoomType, RoomTypeMeta> = {
   DEFAULT: { label: "Default", color: "#64748b", icon: Building2 },
 
   // Workspace & education
@@ -118,7 +118,7 @@ export const getRoomTypeMeta = (type: RoomType): RoomTypeMeta => ({
  * channel to remove (0 = unchanged, 1 = black). Used to derive a room's
  * outline color from its fill.
  */
-export const darkenHex = (hex: string, amount = 0.5): string => {
+const darkenHex = (hex: string, amount = 0.5): string => {
   const num = Number.parseInt(hex.slice(1), 16)
   const factor = 1 - amount
   const r = Math.round(((num >> 16) & 0xff) * factor)

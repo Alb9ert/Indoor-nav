@@ -46,11 +46,38 @@ export const VertexMarker = ({ position, color = "#ffffff", radius = 0.06 }: Ver
 
   return (
     <mesh ref={meshRef} position={pos}>
-      <sphereGeometry args={[radius, 64, 64]} />
+      <sphereGeometry args={[radius, 10, 10]} />
       <meshBasicMaterial color={color} />
     </mesh>
   )
 }
+
+interface RingMarkerProps {
+  position: THREE.Vector3 | [number, number, number]
+  color: string
+  innerRadius?: number
+  outerRadius?: number
+}
+
+/**
+ * Flat ring laid on the floor plane (rotated to face up). Used for
+ * navigation overlay cues (start / destination) where a hollow ring reads
+ * better than a solid sphere on top of polygons.
+ *
+ * Rendered with `depthTest={false}` so the marker stays visible even when
+ * stacked under floor textures or polygon fills.
+ */
+export const RingMarker = ({
+  position,
+  color,
+  innerRadius = 0.5,
+  outerRadius = 0.85,
+}: RingMarkerProps) => (
+  <mesh position={position} rotation={[-Math.PI / 2, 0, 0]}>
+    <ringGeometry args={[innerRadius, outerRadius, 48]} />
+    <meshBasicMaterial color={color} transparent opacity={0.95} depthTest={false} />
+  </mesh>
+)
 
 interface EdgePreviewProps {
   points: readonly (THREE.Vector3 | [number, number, number])[]

@@ -4,12 +4,13 @@ import * as THREE from "three"
 
 import { MIN_POLYGON_VERTICES } from "#/components/hooks/use-room-drawing-state"
 import { useMap } from "#/lib/map-context"
+import { floorToY, lift, snapPointToGrid } from "#/lib/three-utils"
 import { getAllRoomsData } from "#/server/room.functions"
 
 import { useCanvasPointer } from "../hooks/use-canvas-pointer"
 import { useSnapToExisting } from "../hooks/use-snap-to-existing"
 
-import { DRAWING_LIFT, FLOOR_HEIGHT, SNAP_RADIUS_METERS } from "./constants"
+import { SNAP_RADIUS_METERS } from "./constants"
 import { EdgePreview, VertexMarker } from "./draw-primitives"
 import { RaycastPlane } from "./raycast-plane"
 
@@ -33,9 +34,7 @@ const EXTERNAL_CORNER_RADIUS = 0.09
 const CLOSE_TARGET_RADIUS = 0.18
 const POLYLINE_WIDTH = 4
 const PREVIEW_WIDTH = 3
-
-/** Lift a world-space point above the floor plane to avoid z-fighting. */
-const lift = (v: THREE.Vector3): [number, number, number] => [v.x, v.y + DRAWING_LIFT, v.z]
+const EXTERNAL_CORNER_RENDER_RADIUS_MULTIPLIER = 3
 
 /**
  * Position equality on the floor's local 2D plane (x, z). Used instead of
@@ -57,14 +56,6 @@ const samePosition = (a: THREE.Vector3, b: THREE.Vector3): boolean => a.x === b.
  * and added to the snap target list, so adjacent rooms can share walls by
  * placing new vertices exactly at the existing corners.
  */
-/** Snap a world point to the nearest intersection of a grid with given spacing. */
-const snapPointToGrid = (point: THREE.Vector3, spacing: number, floorY: number): THREE.Vector3 =>
-  new THREE.Vector3(
-    Math.round(point.x / spacing) * spacing,
-    floorY,
-    Math.round(point.z / spacing) * spacing,
-  )
-
 const buildAxisAlignedRectangle = (
   anchor: THREE.Vector3,
   opposite: THREE.Vector3,
@@ -85,7 +76,7 @@ export const DrawingLayer = ({ floor }: DrawingLayerProps) => {
 
   const [cursor, setCursor] = useState<THREE.Vector3 | null>(null)
 
-  const floorY = floor.floor * FLOOR_HEIGHT
+  const floorY = floorToY(floor.floor)
 
   /**
    * Apply grid snap if enabled AND the grid has a known spacing. Returns the
@@ -118,6 +109,14 @@ export const DrawingLayer = ({ floor }: DrawingLayerProps) => {
         .flatMap((r) => r.vertices.map((v) => new THREE.Vector3(v.x, floorY, v.z))),
     [allRooms, floor.floor, floorY],
   )
+
+  // Rendering every external corner marker gets expensive on large datasets.
+  // Keep all corners available for snapping, but only draw those near cursor.
+  const visibleExternalCorners = useMemo<THREE.Vector3[]>(() => {
+    if (!cursor) return []
+    const maxDistance = SNAP_RADIUS_METERS * EXTERNAL_CORNER_RENDER_RADIUS_MULTIPLIER
+    return externalCorners.filter((corner) => cursor.distanceTo(corner) <= maxDistance)
+  }, [externalCorners, cursor])
 
   // True once the polygon is closeable: enough vertices placed AND no
   // validation errors. Drives both the click handler and the always-on
@@ -247,7 +246,7 @@ export const DrawingLayer = ({ floor }: DrawingLayerProps) => {
     <>
       <RaycastPlane floor={floor} {...handlers} />
 
-      {externalCorners.map((corner, index) => (
+      {visibleExternalCorners.map((corner, index) => (
         <VertexMarker
           key={String(corner.x) + "-" + String(corner.z) + "-" + String(index)}
           position={lift(corner)}

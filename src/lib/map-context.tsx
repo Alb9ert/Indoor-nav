@@ -2,14 +2,17 @@ import { useQuery } from "@tanstack/react-query"
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react"
 
 import { useRoomDrawingState } from "#/components/hooks/use-room-drawing-state"
+import { polygonCentroid } from "#/lib/three-utils"
 import { getFloorPlansData } from "#/server/floorplan.functions"
 import type { OrbitControls as DreiOrbitControls } from "@react-three/drei"
 
 import type { RoomDrawingState } from "#/components/hooks/use-room-drawing-state"
 import type { FloorPlan } from "#/types/floor-plan"
+import type { Node, PendingNode } from "#/types/node"
+import type { Room } from "#/types/room"
 import type { ComponentRef, ReactNode, RefObject } from "react"
 
-export type OrbitControlsHandle = ComponentRef<typeof DreiOrbitControls>
+type OrbitControlsHandle = ComponentRef<typeof DreiOrbitControls>
 
 type RenderMode = "2d" | "3d"
 type RoomDrawMode = "polygon" | "rectangle"
@@ -23,14 +26,6 @@ type RoomOverlayMode = "icon" | "none"
  * have to change again.
  */
 export type ActiveTool = "default" | "draw-room" | "edit-room" | "draw-node" | "connect-edge"
-
-export interface PendingNode {
-  x: number
-  y: number
-  z: number
-  floor: number
-  roomId?: string
-}
 
 interface MapContextValue {
   floors: FloorPlan[]
@@ -108,6 +103,40 @@ interface MapContextValue {
    * Canvas (e.g. the compass) can read rotation and reset it.
    */
   controlsRef: RefObject<OrbitControlsHandle | null>
+  /**
+   * When true, an end-user is picking a coordinate on the map (entered from
+   * the navigation panel's "Select on map" result). The map-pick overlay
+   * renders a centered crosshair and a confirm/cancel toolbar.
+   */
+  pickingStart: boolean
+  setPickingStart: (picking: boolean) => void
+  /**
+   * Per-frame focus animator (read by `<FocusRig>`). Holds the active
+   * request, or null when nothing is in flight. Use `focusTarget()` to set.
+   */
+  focusRequestRef: RefObject<FocusRequest | null>
+  /**
+   * Smoothly pan the camera to a Room, Node, or free-form floor coordinate,
+   * switching to the right floor as a side effect. Latest call wins.
+   *
+   * Rooms get a fit-to-bbox zoom; nodes/points get a fixed close-up zoom.
+   */
+  focusTarget: (target: Room | Node | { x: number; y: number; floor: number }) => void
+}
+
+/**
+ * Animation request consumed by `<FocusRig>`. World coords are three.js
+ * (x, _, z) — `worldZ = -mapY` for points expressed in map coordinates.
+ *
+ * `targetSpan` is the world distance the focus should fit on the smaller
+ * viewport axis. The actual zoom (ortho) or distance (perspective) is
+ * computed from the live camera frustum inside `FocusRig`, since both
+ * depend on canvas size and FOV which `focusTarget` doesn't know about.
+ */
+export interface FocusRequest {
+  worldX: number
+  worldZ: number
+  targetSpan?: number
 }
 
 const MapContext = createContext<MapContextValue | null>(null)
@@ -144,9 +173,12 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
   const [pendingNode, setPendingNode] = useState<PendingNode | null>(null)
   const [pendingEdgeFromNodeId, setPendingEdgeFromNodeId] = useState<string | null>(null)
   const [editingEdgeId, setEditingEdgeId] = useState<string | null>(null)
+  const [pickingStart, setPickingStart] = useState(false)
   const previousRenderModeRef = useRef<RenderMode | null>(null)
+  const previousRenderModeForPickRef = useRef<RenderMode | null>(null)
   const controlsRef = useRef<OrbitControlsHandle | null>(null)
   const gridSpacingRef = useRef<number | null>(null)
+  const focusRequestRef = useRef<FocusRequest | null>(null)
 
   const drawing = useRoomDrawingState(activeTool === "draw-room", currentFloor)
 
@@ -179,6 +211,25 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
     [renderMode],
   )
 
+  const handleSetPickingStart = useCallback(
+    (picking: boolean) => {
+      setPickingStart((current) => {
+        if (!current && picking) {
+          // Picking only resolves correctly in 2D top-down. Lock the render
+          // mode and remember the previous one to restore on exit.
+          previousRenderModeForPickRef.current = renderMode
+          setRenderMode("2d")
+        } else if (current && !picking) {
+          const previous = previousRenderModeForPickRef.current
+          previousRenderModeForPickRef.current = null
+          if (previous !== null) setRenderMode(previous)
+        }
+        return picking
+      })
+    },
+    [renderMode],
+  )
+
   const handleSetEditingRoomId = useCallback((id: string | null) => {
     setEditingRoomId(id)
     if (id !== null) setViewingRoomId(null)
@@ -187,6 +238,40 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
   const handleSetViewingRoomId = useCallback((id: string | null) => {
     setViewingRoomId(id)
     if (id !== null) setEditingRoomId(null)
+  }, [])
+
+  const focusTarget = useCallback<MapContextValue["focusTarget"]>((target) => {
+    setSelectedFloor(target.floor)
+
+    if ("vertices" in target) {
+      const c = polygonCentroid(target.vertices)
+      // Bounding box of the polygon (in floor-plane (x, z) coords).
+      let minX = Number.POSITIVE_INFINITY
+      let maxX = Number.NEGATIVE_INFINITY
+      let minZ = Number.POSITIVE_INFINITY
+      let maxZ = Number.NEGATIVE_INFINITY
+      for (const v of target.vertices) {
+        if (v.x < minX) minX = v.x
+        if (v.x > maxX) maxX = v.x
+        if (v.z < minZ) minZ = v.z
+        if (v.z > maxZ) maxZ = v.z
+      }
+      // World-units to fit on the smaller viewport axis. 1.6× pad on the
+      // longest side keeps the room comfortably framed instead of edge-to-
+      // edge. FocusRig converts this to the right zoom (ortho) or distance
+      // (perspective) using the camera's actual frustum.
+      const longest = Math.max(maxX - minX, maxZ - minZ, 1)
+      focusRequestRef.current = { worldX: c.x, worldZ: c.z, targetSpan: longest * 1.6 }
+      return
+    }
+
+    // Node or free-form point — both expose (x, y, floor) in map coords;
+    // map y → world -z. ~8m around the point is a sensible close-up.
+    focusRequestRef.current = {
+      worldX: target.x,
+      worldZ: -target.y,
+      targetSpan: 8,
+    }
   }, [])
 
   const handleSetEditingNodeId = useCallback((id: string | null) => {
@@ -233,18 +318,18 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
       setPendingEdgeFromNodeId,
       editingEdgeId,
       setEditingEdgeId,
+      pickingStart,
+      setPickingStart: handleSetPickingStart,
+      focusRequestRef,
+      focusTarget,
     }),
     [
       floors,
       currentFloor,
-      setSelectedFloor,
       isSelectingFloor,
-      setIsSelectingFloor,
       isLoading,
       renderMode,
-      setRenderMode,
       debugMode,
-      setDebugMode,
       activeTool,
       handleSetActiveTool,
       drawing,
@@ -252,13 +337,17 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
       handleSetEditingRoomId,
       viewingRoomId,
       handleSetViewingRoomId,
-      editingNodeId,
-      pendingNode,
-      pendingEdgeFromNodeId,
-      editingEdgeId,
       snapToGrid,
       roomDrawMode,
       roomOverlayMode,
+      editingNodeId,
+      handleSetEditingNodeId,
+      pendingNode,
+      pendingEdgeFromNodeId,
+      editingEdgeId,
+      pickingStart,
+      handleSetPickingStart,
+      focusTarget,
     ],
   )
 

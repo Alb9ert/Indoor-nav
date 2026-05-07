@@ -134,6 +134,13 @@ export class Graph {
   }
 
   // ----------------------------- //
+  // Get all nodes on a given floor
+  // ----------------------------- //
+  getNodesByFloor(floor: number): Node[] {
+    return [...this.nodes.values()].filter((n) => n.floor === floor)
+  }
+
+  // ----------------------------- //
   // Get adjacent edges: A -> [A -> B, A -> C ... ]
   // ----------------------------- //
   getNeighbors(id: Node["id"]): Edge[] {
@@ -196,17 +203,6 @@ export const getAllNodesInDb = async () => {
 
 export const getAllEdgesInDb = async () => {
   return await prisma.edge.findMany()
-}
-
-export const updateNodeTypeInDb = async (nodeId: string, type: string) => {
-  const updated = await prisma.node.update({
-    where: { id: nodeId },
-    data: { type: type as Node["type"] },
-  })
-  const g = await getGraph()
-  const node = g.nodes.get(nodeId)
-  if (node) node.type = updated.type
-  return updated
 }
 
 export const updateNodeInDb = async (
@@ -312,54 +308,37 @@ export const deleteEdgeByIdInDb = async (edgeId: Edge["id"]) => {
   return deleted
 }
 
-export const deactivateEdgeByIdinDb = async (edgeId: Edge["id"]) => {
-  const updated = await prisma.edge.update({
-    where: { id: edgeId },
-    data: { isActivated: false },
-  })
-
-  const g = await getGraph()
-  g.deactiveEdgeByNodeIds(updated.fromNodeId, updated.toNodeId)
-
-  return updated
-}
-
-export const activateEdgeByIdInDb = async (edgeId: Edge["id"]) => {
-  const updated = await prisma.edge.update({
-    where: { id: edgeId },
-    data: { isActivated: true },
-  })
-
-  const g = await getGraph()
-  g.activateEdgeByNodeIds(updated.fromNodeId, updated.toNodeId)
-
-  return updated
-}
-
 export const createTransitNodesInDb = async (input: {
   x: number
   y: number
-  z: number
   type: "STAIR" | "ELEVATOR"
   floors: number[]
   isActivated: boolean
-  roomId?: string
 }): Promise<{ nodeIds: string[]; edgeIds: string[] }> => {
-  const { x, y, z, type, floors, isActivated, roomId } = input
+  const { x, y, type, floors, isActivated } = input
   const sorted = [...floors].sort((a, b) => a - b)
 
   const createdNodes = await Promise.all(
-    sorted.map((floor) =>
-      addNodeInDb({
+    sorted.map(async (floor) => {
+      const roomMatch = await prisma.$queryRaw<{ id: string }[]>`
+        SELECT r.id FROM "Room" r
+        WHERE r.floor = ${floor}
+          AND r.polygon IS NOT NULL
+          AND ST_Contains(r.polygon, ST_MakePoint(${x}, ${-y}))
+        LIMIT 1
+      `
+      const roomId = roomMatch[0]?.id ?? null
+
+      return addNodeInDb({
         x,
         y,
-        z,
+        z: floor,
         type,
         isActivated,
         floorPlan: { connect: { floor } },
         ...(roomId ? { room: { connect: { id: roomId } } } : {}),
-      }),
-    ),
+      })
+    }),
   )
 
   const createdEdges = await Promise.all(

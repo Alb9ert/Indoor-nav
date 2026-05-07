@@ -12,7 +12,7 @@
  */
 
 /** A 2D point in the floor frame. `THREE.Vector3` matches this structurally. */
-export interface PlanePoint {
+interface PlanePoint {
   x: number
   z: number
 }
@@ -106,7 +106,7 @@ export const pointStrictlyInsidePolygon = (
  * Returns the index of the first edge in the open polyline `vertices[0..n-1]`
  * that crosses another non-adjacent edge, or null if the polyline is simple.
  */
-export const openPolylineSelfIntersection = (vertices: readonly PlanePoint[]): number | null => {
+const openPolylineSelfIntersection = (vertices: readonly PlanePoint[]): number | null => {
   const n = vertices.length
   if (n < 4) return null
   for (let i = 0; i < n - 1; i++) {
@@ -123,7 +123,7 @@ export const openPolylineSelfIntersection = (vertices: readonly PlanePoint[]): n
  * Returns true if closing the polyline (drawing an edge from `vertices[n-1]`
  * back to `vertices[0]`) would cross any non-adjacent existing edge.
  */
-export const closingEdgeIntersectsPolyline = (vertices: readonly PlanePoint[]): boolean => {
+const closingEdgeIntersectsPolyline = (vertices: readonly PlanePoint[]): boolean => {
   const n = vertices.length
   if (n < 4) return false
   const closingStart = vertices[n - 1]
