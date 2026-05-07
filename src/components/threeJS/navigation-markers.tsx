@@ -1,7 +1,7 @@
 import { Html } from "@react-three/drei"
+import { useQuery } from "@tanstack/react-query"
 import { CircleDot, MapPin } from "lucide-react"
 import { useMemo } from "react"
-import { useQuery} from "@tanstack/react-query"
 
 import { useMap } from "#/lib/map-context"
 import { useNavigation } from "#/lib/navigation-context"
@@ -51,7 +51,7 @@ const navigationValueToPlacement = (value: NavigationStart | Room): MarkerPlacem
  * marker doesn't project onto an unrelated floor's plan.
  */
 export const NavigationMarkers = () => {
-  const { start, destination, navigationPath } = useNavigation()
+  const { start, destination } = useNavigation()
   const { renderMode, currentFloor, editingRoomId, viewingRoomId } = useMap()
 
   const { data: rooms = [] } = useQuery({
@@ -61,7 +61,7 @@ export const NavigationMarkers = () => {
 
   const highlightedRoom = useMemo(() => {
     const highlightedId = editingRoomId || viewingRoomId
-    return highlightedId ? rooms.find(room => room.id === highlightedId) : null
+    return highlightedId ? rooms.find((room) => room.id === highlightedId) : null
   }, [rooms, editingRoomId, viewingRoomId])
 
   const startPlacement = useMemo(() => (start ? navigationValueToPlacement(start) : null), [start])
@@ -98,20 +98,22 @@ export const NavigationMarkers = () => {
           />
         </Html>
       )}
-      
-      {highlightedRoomPlacement && isVisibleOnCurrentView(highlightedRoomPlacement) && !destination && (
-        <Html
-          position={highlightedRoomPlacement.position}
-          center
-          zIndexRange={[0, 0]}
-          pointerEvents="none"
-        >
-          <MapPin
-            className="size-9 -translate-y-1/2 text-red-500 drop-shadow-lg"
-            strokeWidth={2.5}
-          />
-        </Html>
-      )}
+
+      {highlightedRoomPlacement &&
+        isVisibleOnCurrentView(highlightedRoomPlacement) &&
+        !destination && (
+          <Html
+            position={highlightedRoomPlacement.position}
+            center
+            zIndexRange={[0, 0]}
+            pointerEvents="none"
+          >
+            <MapPin
+              className="size-9 -translate-y-1/2 text-red-500 drop-shadow-lg"
+              strokeWidth={2.5}
+            />
+          </Html>
+        )}
     </>
   )
 }
